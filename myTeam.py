@@ -41,6 +41,30 @@ def createTeam(firstIndex, secondIndex, isRed,
   # The following line is an example only; feel free to change it.
   return [eval(first)(firstIndex), eval(second)(secondIndex)]
 
+
+
+"""
+  BRAINSTORMING 30-08-2022
+
+  Must use 2 AI-related techniques.
+  The first we plan to use is Heuristic Search Algoritms.
+  The second we plan to use is Monte Carlo Tree Search.
+  Could also possibly use Reinforcement Learning since that will be covered relatively soon.
+
+  Try using 2 Offensive agents and also 1 Offensive and 1 Defensive agent.
+
+  We can try using A* algorithm for heuristic search. We will need to come up with a heuristic.
+
+  General Ideas:
+    - Try having the offensive agent(s) rush for a food pellet and take as many food pellets as it can before returning.
+    - Maybe try switching from Offensive to Defense
+    - Can try alpha-beta search
+    - Can try blocking path to half through defensive agents.
+    - Have to come up with a way to evaluate when to go home.
+    - When we have two offensive agents, can try to divide the food among them.
+
+"""
+
 ##########
 # Agents #
 ##########
