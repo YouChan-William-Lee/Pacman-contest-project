@@ -208,13 +208,26 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
     # Compute distance to the nearest food
 
-    if len(foodList) > 0: # This should always be True,  but better safe than sorry
+    capsuleList = self.getCapsules(gameState)
+
+    # print(capsuleList)
+
+    if len(capsuleList) > 0: # This should always be True,  but better safe than sorry
       myPos = successor.getAgentState(self.index).getPosition()
-      minDistance = min([self.getMazeDistance(myPos, food) for food in foodList])
-      features['distanceToFood'] = minDistance
+      minDistance = min([self.getMazeDistance(myPos, capsule) for capsule in capsuleList])
+      features['distanceToCapsule'] = minDistance
+    else:
+      if len(foodList) > 0: # This should always be True,  but better safe than sorry
+        myPos = successor.getAgentState(self.index).getPosition()
+        minDistance = min([self.getMazeDistance(myPos, food) for food in foodList])
+        features['distanceToFood'] = minDistance
     return features
 
   def getWeights(self, gameState, action):
+    capsuleList = self.getCapsules(gameState)
+    if len(capsuleList) > 0:
+      print("Yeet")
+      return {'successorScore': 100, 'distanceToCapsule': -1}
     return {'successorScore': 100, 'distanceToFood': -1}
 
 class DefensiveReflexAgent(ReflexCaptureAgent):
