@@ -21,6 +21,7 @@ import game
 # Own imports
 from util import nearestPoint
 import math
+import sys
 
 #################
 # Team creation #
@@ -141,7 +142,7 @@ class ReflexCaptureAgent(CaptureAgent):
     """
     actions = gameState.getLegalActions(self.index)
 
-    print("agent", str(self.index), gameState.getAgentPosition(self.index))
+    # print("agent", str(self.index), gameState.getAgentPosition(self.index))
 
     # You can profile your evaluation time by uncommenting these lines
     # start = time.time()
@@ -221,7 +222,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
   such an agent.
   """
 
-  print("Implement Defensive agent here")
+  # print("Implement Defensive agent here")
 
   def chooseAction(self, gameState):
     """
@@ -237,6 +238,31 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
     #   print("Yeet")
     # # In this case, 
     # else:
+
+
+    # Find all seen invaders
+    seenInvaders = []
+    for enemy in self.getOpponents(gameState):
+      invader = gameState.getAgentState(enemy)
+      if invader.isPacman and invader.getPosition() != None:
+        seenInvaders.append(invader)
+
+
+    if len(seenInvaders) > 0:
+      closestInvader = None
+      closestDistanceToInvader = sys.maxsize
+      for invader in seenInvaders:
+        distance = util.manhattanDistance(currentPosition, invader.getPosition())
+        if distance < closestDistanceToInvader:
+          closestInvader = invader
+          closestDistanceToInvader = distance
+        
+      action = aStarSearchToLocation(gameState, self.index, closestInvader.getPosition())
+      return action
+    
+
+    # agent = gameState.getAgentState(agentIndex)
+    # agent.isPacman
     action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
     if action == 'Stop':
       self.entranceToPatrol = random.choice(self.entrances)
@@ -280,14 +306,9 @@ def aStarSearchToLocation(gameState, agentIndex, location):
         childPosition = successor.getAgentPosition(agentIndex)
 
         # This will make the defensive agent never go onto the other side.
-        if currentGameState.isOnRedTeam(agentIndex):
-          middleX = math.floor((gameState.data.layout.width / 2)) - 1
-          if childPosition[0] > middleX:
-            continue
-        else:
-          middleX = math.floor((gameState.data.layout.width / 2))
-          if childPosition[0] < middleX:
-            continue
+        agent = currentGameState.getAgentState(agentIndex)
+        if agent.isPacman:
+          continue
 
     # for childPosition, action, cost in currentGameState.getSuccessors(currentStatePosition):
         pathToChild = currentStatePath + [action]
