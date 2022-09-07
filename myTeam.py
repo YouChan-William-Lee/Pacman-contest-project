@@ -17,8 +17,10 @@ import random, time, util
 from game import Directions
 import game
 
+
 # Own imports
 from util import nearestPoint
+import math
 
 #################
 # Team creation #
@@ -127,6 +129,8 @@ class ReflexCaptureAgent(CaptureAgent):
  
   def registerInitialState(self, gameState):
     self.start = gameState.getAgentPosition(self.index)
+    self.middle = findMiddleOfMap(gameState.isOnRedTeam(self.index), gameState)
+    self.walls = gameState.getWalls().asList()
     CaptureAgent.registerInitialState(self, gameState)
 
   def chooseAction(self, gameState):
@@ -134,6 +138,8 @@ class ReflexCaptureAgent(CaptureAgent):
     Picks among the actions with the highest Q(s,a).
     """
     actions = gameState.getLegalActions(self.index)
+
+    print("agent", str(self.index), gameState.getAgentPosition(self.index))
 
     # You can profile your evaluation time by uncommenting these lines
     # start = time.time()
@@ -196,6 +202,72 @@ class ReflexCaptureAgent(CaptureAgent):
     """
     return {'successorScore': 1.0}
 
+  # def aStarToLocation(gameState, agentIndex, location):
+  #   """Search the node that has the lowest combined cost and heuristic first."""
+  #   "*** YOUR CODE HERE ***"
+
+  #   heuristic=util.manhattanDistance
+
+  #   gameState.getLegalActions()
+  #   gameState.getAgentPosition(agentIndex)
+  #   gameState.generateSuccessor(agentIndex, action)
+
+
+  #   def expand(problem, node):
+  #       # A list for all successors' node of current node
+  #       successors = []
+  #       currentState, currentParentState, currentAction, currentCost = node
+  #       for successor, action, stepCost in problem.getSuccessors(currentState):
+  #           successors.append((successor, currentState, currentAction + [action], currentCost + stepCost))
+
+  #       return successors
+
+  #   # pathToGoal includes all directions to get to the goal state
+  #   pathToGoal = []
+  #   # costToGoal includes all costs to get to the goal state
+  #   costToGoal = 0
+  #   # Assign problem's initial state
+  #   initialState = problem.getStartState()
+  #   # There is no parent state of the start state, so None
+  #   parentState = None
+    
+  #   # Use a priority queue for A*
+  #   # structure of frontier's node -> (state, parent state, path, cost), heuristics
+  #   # If cost is not included in the tuple, then when it is popped, the cost cannot be reachable
+  #   frontier = util.PriorityQueue()
+  #   frontier.push((initialState, parentState, pathToGoal, costToGoal), heuristic(initialState, problem))
+
+  #   # reachedStates includes all reached states
+  #   # Dictionary is used to save state with corresponding cost
+  #   reachedStates = {}
+
+  #   # Keep searching until frontier is empty
+  #   while not frontier.isEmpty():
+  #       node = frontier.pop()
+  #       state, parentState, currentPath, currentCost = node
+  #       # Assgin the cost to the state
+  #       reachedStates[state] = currentCost
+
+  #       # Check if current state is the goal state
+  #       if problem.isGoalState(state):
+  #           return currentPath
+
+  #       # Check successors of current state
+  #       for successor, parentState, action, stepCost in expand(problem, node):
+  #           # Find successors satisfying either condition1 or condition2
+  #           # condition1 -> Do not visit again
+  #           # conditoin2 -> Visit again if only new cost is less than current cost including heuristics
+  #           condition1 = successor not in reachedStates
+  #           condition2 = (successor in reachedStates) and (reachedStates[successor] > (stepCost + heuristic(successor, problem)))
+            
+  #           if condition1 or condition2:
+  #               # Add current successor to reachedStates with corresponding cost, so not to visit again
+  #               reachedStates[successor] = stepCost
+  #               # Push current successor's state, parent state, path, and cost including heuristics to frontier
+  #               frontier.push((successor, state, action, stepCost), stepCost + heuristic(successor, problem))
+                
+  #   return pathToGoal[0]
+
 class OffensiveReflexAgent(ReflexCaptureAgent):
   """
   A reflex agent that seeks food. This is an agent
@@ -214,3 +286,97 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
   """
 
   print("Implement Defensive agent here")
+
+  def chooseAction(self, gameState):
+    """
+    Picks among the actions with the highest Q(s,a).
+    """
+    return aStarSearchToLocation(gameState, self.index, self.middle)
+
+
+def aStarSearchToLocation(gameState, agentIndex, location):
+  """Search the node that has the lowest combined cost and heuristic first."""
+  "*** YOUR CODE HERE ***"
+
+  heuristic=util.manhattanDistance
+
+  POSITION_INDEX = 0
+  PATH_INDEX = 1
+  GAME_STATE_INDEX = 2
+  START_STATE_PRIORITY = 0
+
+  startState = (gameState.getAgentPosition(agentIndex), [], gameState)
+  frontier = util.PriorityQueue()
+  frontier.update(startState, START_STATE_PRIORITY)
+  visitedKey = [startState[POSITION_INDEX]]
+  visitedValue = [START_STATE_PRIORITY]
+
+  while(not frontier.isEmpty()):
+      currentState = frontier.pop()
+      currentStatePosition = currentState[POSITION_INDEX]
+      currentStatePath = currentState[PATH_INDEX]
+      currentGameState = currentState[GAME_STATE_INDEX]
+
+      if currentStatePosition == location:
+
+          if len(currentStatePath) == 0: # Return STOP if the location has been reached and there is no more path.
+            return "Stop"
+          return currentStatePath[0] # Return the first action on the path   
+
+      for action in currentGameState.getLegalActions(agentIndex):
+        successor = currentGameState.generateSuccessor(agentIndex, action)
+
+        childPosition = successor.getAgentPosition(agentIndex)
+
+    # for childPosition, action, cost in currentGameState.getSuccessors(currentStatePosition):
+        pathToChild = currentStatePath + [action]
+        # In A* search, also include the heuristic function value when calculating cost.
+        # This is the ONLY difference to the normal UCS algorithm above.
+        costToChild = 1 + heuristic(childPosition, location)
+        if (childPosition not in visitedKey): 
+            childState = (childPosition, pathToChild, successor)
+            frontier.update(childState, costToChild)
+            visitedKey.append(childPosition)
+            visitedValue.append(costToChild)
+        else:
+            visitedIndex = visitedKey.index(childPosition)
+            if (costToChild < visitedValue[visitedIndex]):
+                childState = (childPosition, pathToChild, successor)
+                frontier.update(childState, costToChild)
+                visitedKey[visitedIndex] = childPosition
+                visitedValue[visitedIndex] = costToChild
+            
+  return []
+
+def findMiddleOfMap(teamIsRed, gameState):
+  
+  location = None
+
+  walls = gameState.getWalls().asList()
+
+  if teamIsRed:
+    middleWidth = math.floor((gameState.data.layout.width / 2)) - 1
+    middleHeight = math.floor((gameState.data.layout.height / 2))
+
+    
+    entrances = []
+
+
+    for i in range(gameState.data.layout.height - 1):
+      currentPosition = (middleWidth, i)
+      currentPositionToRight = (middleWidth + 1, i)
+
+      
+      if currentPosition not in walls and currentPositionToRight not in walls:
+        entrances.append(currentPosition)
+
+    print("PRINTING ENTRANCES")
+    print(entrances)
+
+    
+  else:
+    middleWidth = math.ceil((gameState.data.layout.width / 2))
+    middleHeight = math.ceil((gameState.data.layout.height / 2))
+
+
+  return entrances[3]
