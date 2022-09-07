@@ -133,7 +133,8 @@ class ReflexCaptureAgent(CaptureAgent):
     self.entrances = findEntrances(gameState.isOnRedTeam(self.index), gameState)
     self.middle = findMiddleOfMap(gameState.isOnRedTeam(self.index), gameState)
     self.walls = gameState.getWalls().asList()
-    self.entranceToPatrol = self.middle   
+    # self.entranceToPatrol = self.middle   
+    self.entranceToPatrol = self.entrances[len(self.entrances)-1]   
     CaptureAgent.registerInitialState(self, gameState)
 
   def chooseAction(self, gameState):
@@ -187,7 +188,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
 
 
-    return random.choice(actions)
+    return "Stop"
 
 class DefensiveReflexAgent(ReflexCaptureAgent):
   """
@@ -204,6 +205,8 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
     Picks among the actions with the highest Q(s,a).
     """
 
+    print("NEW ACTION ----------")
+
     start = time.time()
 
     action = None
@@ -215,6 +218,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
     # else:
 
 
+    print("SEEN INVADERS")
     # Find all seen invaders
     seenInvaders = []
     for enemy in self.getOpponents(gameState):
@@ -231,16 +235,38 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         if distance < closestDistanceToInvader:
           closestInvader = invader
           closestDistanceToInvader = distance
-        
+      
+      print("ASTAR to invader:")
+      print(closestInvader.getPosition())
       action = aStarSearchToLocation(gameState, self.index, closestInvader.getPosition())
+      print(action)
       return action
 
+    print("GETTING PREV OBSERVATION")
     # If it reaches here, no direct invaders were found
     if self.getPreviousObservation():
       print("Check food here")
-      print(checkEatenFoods(self.red, self.getPreviousObservation(), gameState))
+      eatenFoods = checkEatenFoods(self.red, self.getPreviousObservation(), gameState)
+      closestFood = None
+      
+      if len(eatenFoods) == 2:
+        distanceToFirstFood = util.manhattanDistance(currentPosition, eatenFoods[0])
+        distanceToSecondFood = util.manhattanDistance(currentPosition, eatenFoods[1])
+        if distanceToFirstFood < distanceToSecondFood:
+          closestFood = eatenFoods[0]
+        else:
+          closestFood = eatenFoods[1]
+      elif len(eatenFoods) == 1:
+        closestFood = eatenFoods[0]
+
+      if closestFood != None:
+        print("DOING FOOD ASTAR")
+        action = aStarSearchToLocation(gameState, self.index, closestFood)
+        print(action)
+        return action
     
 
+    print("A STAR TO ENTRANCE")
     # agent = gameState.getAgentState(agentIndex)
     # agent.isPacman
     action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
@@ -249,12 +275,78 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
       self.entranceToPatrol = (self.entrances[len(self.entrances) - 1])
 
     print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
+    print(action)
     return action
+    
+# def aStarSearchToLocation(gameState, agentIndex, location):
+#     """Search the node that has the lowest combined cost and heuristic first."""
+#     "*** YOUR CODE HERE ***"
 
+#     heuristic = util.manhattanDistance
+#     def expand(agentIndex, node):
+#         # A list for all successors' node of current node
+#         successors = []
+#         currentState, currentParentState, currentAction, currentCost = node
+#         for action in currentState.getLegalActions(agentIndex):
+#           successor = currentState.generateSuccessor(agentIndex, action)
+#           successors.append((successor, currentState, currentAction + [action], currentCost + stepCost))
+
+#         return successors
+
+#     # pathToGoal includes all directions to get to the goal state
+#     pathToGoal = []
+#     # costToGoal includes all costs to get to the goal state
+#     costToGoal = 0
+#     # Assign problem's initial state
+#     initialState = gameState.getAgentPosition(agentIndex)
+#     # There is no parent state of the start state, so None
+#     parentState = None
+    
+#     # Use a priority queue for A*
+#     # structure of frontier's node -> (state, parent state, path, cost), heuristics
+#     # If cost is not included in the tuple, then when it is popped, the cost cannot be reachable
+#     frontier = util.PriorityQueue()
+#     frontier.push((initialState, parentState, pathToGoal, costToGoal), heuristic(initialState, problem))
+
+#     # reachedStates includes all reached states
+#     # Dictionary is used to save state with corresponding cost
+#     reachedStates = {}
+
+#     # Keep searching until frontier is empty
+#     while not frontier.isEmpty():
+#         node = frontier.pop()
+#         state, parentState, currentPath, currentCost = node
+#         # Assgin the cost to the state
+#         reachedStates[state] = currentCost
+
+#         # Check if current state is the goal state
+#         if currentStatePosition == location:
+
+#           if len(currentPath) == 0: # Return STOP if the location has been reached and there is no more path.
+#             return "Stop"
+#           return currentPath[0]
+
+#         # Check successors of current state
+#         for successor, parentState, action, stepCost in expand(problem, node):
+#             # Find successors satisfying either condition1 or condition2
+#             # condition1 -> Do not visit again
+#             # conditoin2 -> Visit again if only new cost is less than current cost including heuristics
+#             condition1 = successor not in reachedStates
+#             condition2 = (successor in reachedStates) and (reachedStates[successor] > (stepCost + heuristic(successor, problem)))
+            
+#             if condition1 or condition2:
+#                 # Add current successor to reachedStates with corresponding cost, so not to visit again
+#                 reachedStates[successor] = stepCost
+#                 # Push current successor's state, parent state, path, and cost including heuristics to frontier
+#                 frontier.push((successor, state, action, stepCost), stepCost + heuristic(successor, problem))
+                
+#     return pathToGoal
 
 def aStarSearchToLocation(gameState, agentIndex, location):
   """Search the node that has the lowest combined cost and heuristic first."""
   "*** YOUR CODE HERE ***"
+
+  print("INSIDE OF ASTAR agent is", agentIndex, location)
 
   heuristic=util.manhattanDistance
 
@@ -289,13 +381,16 @@ def aStarSearchToLocation(gameState, agentIndex, location):
         # This will make the defensive agent never go onto the other side.
         agent = currentGameState.getAgentState(agentIndex)
         if agent.isPacman:
+          # print("isPacman")
           continue
+        # else:
+          # print("NotPacman")
 
     # for childPosition, action, cost in currentGameState.getSuccessors(currentStatePosition):
         pathToChild = currentStatePath + [action]
         # In A* search, also include the heuristic function value when calculating cost.
         # This is the ONLY difference to the normal UCS algorithm above.
-        costToChild = 1 + heuristic(childPosition, location)
+        costToChild = len(pathToChild) + heuristic(childPosition, location)
         if (childPosition not in visitedKey): 
             childState = (childPosition, pathToChild, successor)
             frontier.update(childState, costToChild)
@@ -308,8 +403,9 @@ def aStarSearchToLocation(gameState, agentIndex, location):
                 frontier.update(childState, costToChild)
                 visitedKey[visitedIndex] = childPosition
                 visitedValue[visitedIndex] = costToChild
-            
+  
   return []
+  # return "Stop"
 
 # Method that finds all entrances
 def findEntrances(teamIsRed, gameState):
