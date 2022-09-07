@@ -19,7 +19,7 @@ import game
 
 
 # Own imports
-from util import nearestPoint
+from util import manhattanDistance, nearestPoint
 import math
 import sys
 
@@ -206,6 +206,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
     # self.entranceToPatrol = self.middle   
     self.entranceToPatrol = self.entrances[len(self.entrances)-1]   
     self.lastFoodEaten = None
+    self.isScared = False
     CaptureAgent.registerInitialState(self, gameState)
 
   # print("Implement Defensive agent here")
@@ -224,7 +225,13 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
     currentPosition = gameState.getAgentPosition(self.index)
     currentAgentState = gameState.getAgentState(self.index)
     if currentAgentState.scaredTimer > 0:
+      # actions = gameState.getLegalActions(self.index)
+      # print(actions)
+      # # return "Stop"
       print("Agent is scared")
+      self.isScared = True
+    else:
+      self.isScared = False
 
     print("SEEN INVADERS")
     # Find all seen invaders
@@ -234,7 +241,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
       if invader.isPacman and invader.getPosition() != None:
         seenInvaders.append(invader)
 
-
+    # If the defensive agent knows where the enemies are
     if len(seenInvaders) > 0:
       closestInvader = None
       closestDistanceToInvader = sys.maxsize
@@ -246,13 +253,25 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
       
       print("ASTAR to invader:")
       print(closestInvader.getPosition())
-      action = aStarSearchToLocation(gameState, self.index, closestInvader.getPosition())
+      action = aStarSearchToLocation(gameState, self.index, closestInvader.getPosition(), self.isScared)
       print(action)
 
       # In the case that we eat an invader, set the last food eaten to none so the agent can go back to patrolling.
       successor = gameState.generateSuccessor(self.index, action)
       if successor.getAgentPosition(self.index) == closestInvader.getPosition():
         self.lastFoodEaten = None
+      return action
+
+    # If the defensive agent doesn't know where the enemies are, then wait them at one of the entrances 
+    # until they get close to 5 manhattan distances 
+    if self.isScared:
+      action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
+      if action == 'Stop':
+        # self.entranceToPatrol = random.choice(self.entrances)
+        self.entranceToPatrol = (self.entrances[math.floor(len(self.entrances)/2)])
+
+      print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
+      print(action)
       return action
 
     # Ensuring that the ghost checks the last food eaten still.
@@ -302,7 +321,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
     print(action)
     return action
 
-def aStarSearchToLocation(gameState, agentIndex, location):
+def aStarSearchToLocation(gameState, agentIndex, location, isScared=False):
   """Search the node that has the lowest combined cost and heuristic first."""
   "*** YOUR CODE HERE ***"
 
@@ -327,14 +346,28 @@ def aStarSearchToLocation(gameState, agentIndex, location):
       currentStatePath = currentState[PATH_INDEX]
       currentGameState = currentState[GAME_STATE_INDEX]
 
-      if currentStatePosition == location:
+      if not isScared:
+        if currentStatePosition == location:
 
-          if len(currentStatePath) == 0: # Return STOP if the location has been reached and there is no more path.
-            return "Stop"
-          return currentStatePath[0] # Return the first action on the path   
+            if len(currentStatePath) == 0: # Return STOP if the location has been reached and there is no more path.
+              return "Stop"
+            return currentStatePath[0] # Return the first action on the path  
+      else:
+        if 2 <= util.manhattanDistance(currentStatePosition, location) <= 3:
+
+            if len(currentStatePath) == 0: # Return STOP if the location has been reached and there is no more path.
+              return "Stop"
+            return currentStatePath[0] # Return the first action on the path  
+
+      legalActions = currentGameState.getLegalActions(agentIndex)
+      if len(legalActions) == 0:
+        print("No legal actions")
 
       for action in currentGameState.getLegalActions(agentIndex):
         successor = currentGameState.generateSuccessor(agentIndex, action)
+        print("Trying Action ", action)
+
+        
 
         childPosition = successor.getAgentPosition(agentIndex)
 
