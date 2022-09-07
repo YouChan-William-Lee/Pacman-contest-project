@@ -259,6 +259,11 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         
       action = aStarSearchToLocation(gameState, self.index, closestInvader.getPosition())
       return action
+
+    # If it reaches here, no direct invaders were found
+    if self.getPreviousObservation():
+      print("Check food here")
+      print(checkEatenFoods(self.red, self.getPreviousObservation(), gameState))
     
 
     # agent = gameState.getAgentState(agentIndex)
@@ -378,3 +383,17 @@ def findEntrances(teamIsRed, gameState):
 def findMiddleOfMap(teamIsRed, gameState):
   entrances = findEntrances(teamIsRed, gameState)
   return entrances[math.ceil(len(entrances)/2)] 
+
+# Method that will check for food that is eaten on the agent's own team.
+# Return list of food.
+def checkEatenFoods(teamIsRed, previousState, currentState):
+  previousFood = []
+  currentFood = []
+  if teamIsRed:
+    previousFood = previousState.getRedFood().asList()
+    currentFood = currentState.getRedFood().asList()
+  else:
+    previousFood = previousState.getBlueFood().asList()
+    currentFood = currentState.getBlueFood().asList()
+
+  return list(set(previousFood) - set(currentFood))
