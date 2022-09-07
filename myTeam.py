@@ -169,41 +169,6 @@ class ReflexCaptureAgent(CaptureAgent):
 
     return random.choice(bestActions)
 
-  def getSuccessor(self, gameState, action):
-    """
-    Finds the next successor which is a grid position (location tuple).
-    """
-    successor = gameState.generateSuccessor(self.index, action)
-    pos = successor.getAgentState(self.index).getPosition()
-    if pos != nearestPoint(pos):
-      # Only half a grid position was covered
-      return successor.generateSuccessor(self.index, action)
-    else:
-      return successor
-
-  def evaluate(self, gameState, action):
-    """
-    Computes a linear combination of features and feature weights
-    """
-    features = self.getFeatures(gameState, action)
-    weights = self.getWeights(gameState, action)
-    return features * weights
-
-  def getFeatures(self, gameState, action):
-    """
-    Returns a counter of features for the state
-    """
-    features = util.Counter()
-    successor = self.getSuccessor(gameState, action)
-    features['successorScore'] = self.getScore(successor)
-    return features
-
-  def getWeights(self, gameState, action):
-    """
-    Normally, weights do not depend on the gamestate.  They can be either
-    a counter or a dictionary.
-    """
-    return {'successorScore': 1.0}
 
 class OffensiveReflexAgent(ReflexCaptureAgent):
   """
@@ -213,6 +178,16 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
   """
   
   print("Implement Offensive Agent here")
+
+  def chooseAction(self, gameState):
+    """
+    Picks among the actions with the highest Q(s,a).
+    """
+    actions = gameState.getLegalActions(self.index)
+
+
+
+    return random.choice(actions)
 
 class DefensiveReflexAgent(ReflexCaptureAgent):
   """
@@ -270,7 +245,8 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
     # agent.isPacman
     action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
     if action == 'Stop':
-      self.entranceToPatrol = random.choice(self.entrances)
+      # self.entranceToPatrol = random.choice(self.entrances)
+      self.entranceToPatrol = (self.entrances[len(self.entrances) - 1])
 
     print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
     return action
