@@ -397,8 +397,8 @@ def aStarSearchToLocation(gameState, agentIndex, location, isScared=False):
                 visitedKey[visitedIndex] = childPosition
                 visitedValue[visitedIndex] = costToChild
   
-  return []
-  # return "Stop"
+  # return []
+  return "Stop"
 
 # Method that finds all entrances
 def findEntrances(teamIsRed, gameState):
