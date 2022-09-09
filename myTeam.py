@@ -219,17 +219,25 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       self.foodEaten = 0
       # No longer need to return to an entrace
       self.entranceToReturnTo = None
+      # self.nextFoodToEat = None
 
     foodToEatList = self.getFood(gameState).asList()
 
     # If a food is eaten, just go back to a random entrance.
     if self.foodEaten > 0:
-      # Decide on an entrance to return to.
+      # Decide on an entrance to return to. The closest manhattan distance.
       if self.entranceToReturnTo == None:
-        self.entranceToReturnTo = random.choice(self.entrances)
-      print("Going back to base")
+        closestEntrance = None
+        distanceToClosestEntrance = sys.maxsize
+        for entrance in self.entrances:
+          distance = util.manhattanDistance(currentPosition, entrance)
+          if distance < distanceToClosestEntrance:
+            distanceToClosestEntrance = distance
+            closestEntrance = entrance
+        self.entranceToReturnTo = closestEntrance
+      # print("Going back to base")
       action = aStarSearchToLocation(gameState, self.index, self.entranceToReturnTo, False, True)
-      print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
+      # print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
       return action
 
 
@@ -244,7 +252,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       self.foodEaten += 1
 
 
-    print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
+    # print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
     return action
 
 class DefensiveReflexAgent(ReflexCaptureAgent):
@@ -327,7 +335,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         # self.entranceToPatrol = random.choice(self.entrances)
         self.entranceToPatrol = (self.entrances[math.floor(len(self.entrances)/2)])
 
-      print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
+      # print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
       # print(action)
       return action
 
@@ -357,12 +365,17 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
       elif len(eatenFoods) == 1:
         closestFood = eatenFoods[0]
 
+<<<<<<< Updated upstream
       if closestFood != None:
         self.lastFoodEaten = closestFood
         self.foodEaten = True
         # print("DOING FOOD ASTAR")
         action = aStarSearchToLocation(gameState, self.index, closestFood)
         # print(action)
+=======
+        action = aStarSearchToLocation(gameState, self.index, self.lastFoodEaten)
+        # print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
+>>>>>>> Stashed changes
         return action
     
 
@@ -376,7 +389,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
       action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
       # self.entranceToPatrol = (self.entrances[len(self.entrances) - 1])
 
-    print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
+    # print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
     # print(action)
     return action
 
