@@ -177,6 +177,17 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
   we give you to get an idea of what an offensive agent might look like,
   but it is by no means the best or only way to build an offensive agent.
   """
+
+  def registerInitialState(self, gameState):
+    self.start = gameState.getAgentPosition(self.index)
+    self.entrances = findEntrances(gameState.isOnRedTeam(self.index), gameState)
+    self.middle = findMiddleOfMap(gameState.isOnRedTeam(self.index), gameState)
+    self.walls = gameState.getWalls().asList()  
+    self.nextFoodToEat = None
+    self.isScared = False
+    self.foodEaten = 0
+    self.entranceToReturnTo = None
+    CaptureAgent.registerInitialState(self, gameState)
   
   # print("Implement Offensive Agent here")
 
@@ -184,11 +195,57 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     """
     Picks among the actions with the highest Q(s,a).
     """
-    actions = gameState.getLegalActions(self.index)
+
+    # THIS IS JUST A STAR SO FAR. WE WILL DEVELOP MDP INTO THIS OFFENSIVE AGENT. JUST WANT TO GET
+    # SOMETHING DONE SO WE CAN GET FEEDBACK ASAP FROM THE FEEDBACK CONTESTS ON OUR DEFENSIVE AGENT.
+    start = time.time()
+    # actions = gameState.getLegalActions(self.index)
+
+    atEntrance = False
+
+    currentPosition = gameState.getAgentPosition(self.index)
+    currentAgentState = gameState.getAgentState(self.index)
+
+    # Check if the agent is in their own side. They have returned or not returned depending on this.
+    # if inOwnSide(self.red, gameState, currentPosition):
+    #   # Set food eaten to 0.
+    #   self.foodEaten = 0
+    #   # No longer need to return to an entrace
+    #   self.entranceToReturnTo = None
+
+    # Replace the above code as no need for another method
+    if not currentAgentState.isPacman:
+      # Set food eaten to 0.
+      self.foodEaten = 0
+      # No longer need to return to an entrace
+      self.entranceToReturnTo = None
+
+    foodToEatList = self.getFood(gameState).asList()
+
+    # If a food is eaten, just go back to a random entrance.
+    if self.foodEaten > 0:
+      # Decide on an entrance to return to.
+      if self.entranceToReturnTo == None:
+        self.entranceToReturnTo = random.choice(self.entrances)
+      print("Going back to base")
+      action = aStarSearchToLocation(gameState, self.index, self.entranceToReturnTo, False, True)
+      print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
+      return action
 
 
+    if self.nextFoodToEat == None:
+      self.nextFoodToEat = random.choice(foodToEatList)
 
-    return "Stop"
+    action = aStarSearchToLocation(gameState, self.index, self.nextFoodToEat, False, True)
+
+    # If the agent is at the food to eat, then it has eaten the food.
+    if action == "Stop":
+      self.nextFoodToEat = random.choice(foodToEatList)
+      self.foodEaten += 1
+
+
+    print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
+    return action
 
 class DefensiveReflexAgent(ReflexCaptureAgent):
   """
@@ -326,13 +383,17 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
     action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
     if action == 'Stop':
       self.entranceToPatrol = random.choice(self.entrances)
+      # Do another a star so it doesn't stop. Takes more calculation time though.
+      action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
       # self.entranceToPatrol = (self.entrances[len(self.entrances) - 1])
 
     print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
     # print(action)
     return action
 
-def aStarSearchToLocation(gameState, agentIndex, location, isScared=False):
+# Method to aStar to any location on the map given the game state, and the agent index.
+# Takes in facts such as if the agent is scared, and also if it is an offensive agent.
+def aStarSearchToLocation(gameState, agentIndex, location, isScared=False, isOffensive=False):
   """Search the node that has the lowest combined cost and heuristic first."""
   "*** YOUR CODE HERE ***"
 
@@ -357,6 +418,7 @@ def aStarSearchToLocation(gameState, agentIndex, location, isScared=False):
       currentStatePath = currentState[PATH_INDEX]
       currentGameState = currentState[GAME_STATE_INDEX]
 
+      # Separate goal for if the agent is scared, and if it is not scared.
       if not isScared:
         if currentStatePosition == location:
 
@@ -384,7 +446,7 @@ def aStarSearchToLocation(gameState, agentIndex, location, isScared=False):
 
         # This will make the defensive agent never go onto the other side.
         agent = currentGameState.getAgentState(agentIndex)
-        if agent.isPacman:
+        if agent.isPacman and not isOffensive:
           # print("isPacman")
           continue
         # else:
@@ -473,3 +535,19 @@ def checkEatenFoods(teamIsRed, previousState, currentState):
     currentFood = currentState.getBlueFood().asList()
 
   return list(set(previousFood) - set(currentFood))
+
+# Method to determine whether an agent is in their own side.
+def inOwnSide(teamIsRed, gameState, agentPosition):
+
+  if teamIsRed:
+    middleWidth = math.floor((gameState.data.layout.width / 2)) - 1
+    if agentPosition[0] <= middleWidth:
+      return True
+    else:
+      return False
+  else:
+    middleWidth = math.ceil((gameState.data.layout.width / 2))
+    if agentPosition[0] >= middleWidth:
+      return True
+    else:
+      return False
