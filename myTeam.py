@@ -133,8 +133,8 @@ class ReflexCaptureAgent(CaptureAgent):
     self.entrances = findEntrances(gameState.isOnRedTeam(self.index), gameState)
     self.middle = findMiddleOfMap(gameState.isOnRedTeam(self.index), gameState)
     self.walls = gameState.getWalls().asList()
-    # self.entranceToPatrol = self.middle   
-    self.entranceToPatrol = self.entrances[len(self.entrances)-1]   
+    self.entranceToPatrol = self.middle   
+    # self.entranceToPatrol = self.entrances[len(self.entrances)-1]   # Testing
     CaptureAgent.registerInitialState(self, gameState)
 
   def chooseAction(self, gameState):
@@ -153,7 +153,7 @@ class ReflexCaptureAgent(CaptureAgent):
     maxValue = max(values)
     bestActions = [a for a, v in zip(actions, values) if v == maxValue]
 
-    print(bestActions)
+    # print(bestActions)
 
     foodLeft = len(self.getFood(gameState).asList())
 
@@ -178,7 +178,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
   but it is by no means the best or only way to build an offensive agent.
   """
   
-  print("Implement Offensive Agent here")
+  # print("Implement Offensive Agent here")
 
   def chooseAction(self, gameState):
     """
@@ -203,8 +203,8 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
     self.entrances = findEntrances(gameState.isOnRedTeam(self.index), gameState)
     self.middle = findMiddleOfMap(gameState.isOnRedTeam(self.index), gameState)
     self.walls = gameState.getWalls().asList()
-    # self.entranceToPatrol = self.middle   
-    self.entranceToPatrol = self.entrances[len(self.entrances)-1]   
+    self.entranceToPatrol = self.middle   
+    # self.entranceToPatrol = self.entrances[len(self.entrances)-1]   # Testing
     self.lastFoodEaten = None
     self.isScared = False
     CaptureAgent.registerInitialState(self, gameState)
@@ -216,7 +216,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
     Picks among the actions with the highest Q(s,a).
     """
 
-    print("NEW ACTION ----------")
+    # print("NEW ACTION ----------")
 
     start = time.time()
 
@@ -228,12 +228,12 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
       # actions = gameState.getLegalActions(self.index)
       # print(actions)
       # # return "Stop"
-      print("Agent is scared")
+      # print("Agent is scared")
       self.isScared = True
     else:
       self.isScared = False
 
-    print("SEEN INVADERS")
+    # print("SEEN INVADERS")
     # Find all seen invaders
     seenInvaders = []
     for enemy in self.getOpponents(gameState):
@@ -251,10 +251,10 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
           closestInvader = invader
           closestDistanceToInvader = distance
       
-      print("ASTAR to invader:")
-      print(closestInvader.getPosition())
+      # print("ASTAR to invader:")
+      # print(closestInvader.getPosition())
       action = aStarSearchToLocation(gameState, self.index, closestInvader.getPosition(), self.isScared)
-      print(action)
+      # print(action)
 
       # In the case that we eat an invader, set the last food eaten to none so the agent can go back to patrolling.
       successor = gameState.generateSuccessor(self.index, action)
@@ -271,7 +271,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         self.entranceToPatrol = (self.entrances[math.floor(len(self.entrances)/2)])
 
       print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
-      print(action)
+      # print(action)
       return action
 
     # Ensuring that the ghost checks the last food eaten still.
@@ -280,12 +280,12 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
       action = aStarSearchToLocation(gameState, self.index, self.lastFoodEaten)
       if currentPosition == self.lastFoodEaten:
         self.lastFoodEaten = None
-      print(action)
+      # print(action)
       return action
 
     # If it reaches here, no direct invaders were found
     if self.getPreviousObservation():
-      print("Check food here")
+      # print("Check food here")
       eatenFoods = checkEatenFoods(self.red, self.getPreviousObservation(), gameState)
       closestFood = None
       
@@ -303,29 +303,29 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
       if closestFood != None:
         self.lastFoodEaten = closestFood
         self.foodEaten = True
-        print("DOING FOOD ASTAR")
+        # print("DOING FOOD ASTAR")
         action = aStarSearchToLocation(gameState, self.index, closestFood)
-        print(action)
+        # print(action)
         return action
     
 
-    print("A STAR TO ENTRANCE")
+    # print("A STAR TO ENTRANCE")
     # agent = gameState.getAgentState(agentIndex)
     # agent.isPacman
     action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
     if action == 'Stop':
-      # self.entranceToPatrol = random.choice(self.entrances)
-      self.entranceToPatrol = (self.entrances[len(self.entrances) - 1])
+      self.entranceToPatrol = random.choice(self.entrances)
+      # self.entranceToPatrol = (self.entrances[len(self.entrances) - 1])
 
     print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
-    print(action)
+    # print(action)
     return action
 
 def aStarSearchToLocation(gameState, agentIndex, location, isScared=False):
   """Search the node that has the lowest combined cost and heuristic first."""
   "*** YOUR CODE HERE ***"
 
-  print("INSIDE OF ASTAR agent is", agentIndex, location)
+  # print("INSIDE OF ASTAR agent is", agentIndex, location)
 
   heuristic = util.manhattanDistance
 
@@ -359,13 +359,13 @@ def aStarSearchToLocation(gameState, agentIndex, location, isScared=False):
               return "Stop"
             return currentStatePath[0] # Return the first action on the path  
 
-      legalActions = currentGameState.getLegalActions(agentIndex)
-      if len(legalActions) == 0:
-        print("No legal actions")
+      # legalActions = currentGameState.getLegalActions(agentIndex)
+      # if len(legalActions) == 0:
+      #   # print("No legal actions")
 
       for action in currentGameState.getLegalActions(agentIndex):
         successor = currentGameState.generateSuccessor(agentIndex, action)
-        print("Trying Action ", action)
+        # print("Trying Action ", action)
 
         
 
@@ -421,8 +421,8 @@ def findEntrances(teamIsRed, gameState):
       if currentPosition not in walls and currentPositionToRight not in walls:
         entrances.append(currentPosition)
 
-    print("RED TEAM PRINTING ENTRANCES")
-    print(entrances)
+    # print("RED TEAM PRINTING ENTRANCES")
+    # print(entrances)
     
   else:
     middleWidth = math.ceil((gameState.data.layout.width / 2))
@@ -438,8 +438,8 @@ def findEntrances(teamIsRed, gameState):
       if currentPosition not in walls and currentPositionToLeft not in walls:
         entrances.append(currentPosition)
 
-    print("BLUE TEAM PRINTING ENTRANCES")
-    print(entrances)
+    # print("BLUE TEAM PRINTING ENTRANCES")
+    # print(entrances)
 
   return entrances
 
