@@ -206,6 +206,15 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     currentPosition = gameState.getAgentPosition(self.index)
     currentAgentState = gameState.getAgentState(self.index)
 
+    foodToEatList = self.getFood(gameState).asList()
+
+    # If pacman is currently on a food, then increase food eaten
+    # if self.getPreviousObservation():
+    #   previousFoodEaten = self.getFood(self.getPreviousObservation()).asList()
+    #   if currentPosition in previousFoodEaten:
+    #     print("Increasing food eaten")
+    #     self.foodEaten += 1
+
     # Check if the agent is in their own side. They have returned or not returned depending on this.
     # if inOwnSide(self.red, gameState, currentPosition):
     #   # Set food eaten to 0.
@@ -219,8 +228,13 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       self.foodEaten = 0
       # No longer need to return to an entrace
       self.entranceToReturnTo = None
+      # If agent was pacman in previous state, then we choose another food to eat.
+      if self.getPreviousObservation():
+        previousAgentState = self.getPreviousObservation().getAgentState(self.index)
+        if previousAgentState.isPacman:
+          self.nextFoodToEat = random.choice(foodToEatList)
 
-    foodToEatList = self.getFood(gameState).asList()
+    
 
     # If a food is eaten, just go back to a random entrance.
     if self.foodEaten > 0:
@@ -234,7 +248,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             distanceToClosestEntrance = distance
             closestEntrance = entrance
       action = aStarSearchToLocation(gameState, self.index, closestEntrance, False, True)
-      print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
+      # print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
       return action
 
 
@@ -248,8 +262,22 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       self.nextFoodToEat = random.choice(foodToEatList)
       self.foodEaten += 1
 
+      ########################### WORKS HERE FOR NOW BECAUSE WE ONLY NEED TO RUN IT WHEN IT EATS ONE FOOD ITS GOING FOR  
+      # Decide on an entrance to return to. Choose the closest entrance.
+      if self.entranceToReturnTo == None:
+        closestEntrance = None
+        distanceToClosestEntrance = sys.maxsize
+        for entrance in self.entrances:
+          distance = util.manhattanDistance(currentPosition, entrance)
+          if distance < distanceToClosestEntrance:
+            distanceToClosestEntrance = distance
+            closestEntrance = entrance
+      action = aStarSearchToLocation(gameState, self.index, closestEntrance, False, True)
+      # print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
+      return action
 
-    print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
+
+    # print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
     return action
 
 class DefensiveReflexAgent(ReflexCaptureAgent):
@@ -271,24 +299,24 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
     self.isScared = False
     CaptureAgent.registerInitialState(self, gameState)
 
-  # print("Implement Defensive agent here")
+  # # print("Implement Defensive agent here")
 
   def chooseAction(self, gameState):
     """
     Picks among the actions with the highest Q(s,a).
     """
 
-    # print("NEW ACTION ----------")
+    # # print("NEW ACTION ----------")
 
     start = time.time()
 
-    # print("LAst eaten food: ", self.lastFoodEaten)
+    # # print("LAst eaten food: ", self.lastFoodEaten)
 
     action = None
 
     # update last food eaten
     if self.getPreviousObservation():
-      # print("Check food here")
+      # # print("Check food here")
       eatenFoods = checkEatenFoods(self.red, self.getPreviousObservation(), gameState)
       closestFood = None
       
@@ -306,10 +334,10 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         closestFood = eatenFoods[0]
 
       if closestFood != None:
-        # print("Setting last eaten food")
+        # # print("Setting last eaten food")
         self.lastFoodEaten = closestFood
         # self.foodEaten = True
-        # print("DOING FOOD ASTAR")
+        # # print("DOING FOOD ASTAR")
 
     currentPosition = gameState.getAgentPosition(self.index)
     currentAgentState = gameState.getAgentState(self.index)
@@ -317,14 +345,14 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
 
     if currentAgentState.scaredTimer > 0:
       # actions = gameState.getLegalActions(self.index)
-      # print(actions)
+      # # print(actions)
       # # return "Stop"
-      # print("Agent is scared")
+      # # print("Agent is scared")
       self.isScared = True
     else:
       self.isScared = False
 
-    # print("SEEN INVADERS")
+    # # print("SEEN INVADERS")
     # Find all seen invaders
     seenInvaders = []
     for enemy in self.getOpponents(gameState):
@@ -342,10 +370,10 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
           closestInvader = invader
           closestDistanceToInvader = distance
       
-      # print("ASTAR to invader:")
-      # print(closestInvader.getPosition())
+      # # print("ASTAR to invader:")
+      # # print(closestInvader.getPosition())
       action = aStarSearchToLocation(gameState, self.index, closestInvader.getPosition(), self.isScared)
-      # print(action)
+      # # print(action)
 
       # In the case that we eat an invader, set the last food eaten to none so the agent can go back to patrolling.
       successor = gameState.generateSuccessor(self.index, action)
@@ -361,8 +389,8 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         # self.entranceToPatrol = random.choice(self.entrances)
         self.entranceToPatrol = (self.entrances[math.floor(len(self.entrances)/2)])
 
-      print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
-      # print(action)
+      # print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
+      # # print(action)
       return action
 
     # Ensuring that the ghost checks the last food eaten still.
@@ -371,18 +399,18 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
       action = aStarSearchToLocation(gameState, self.index, self.lastFoodEaten)
       if currentPosition == self.lastFoodEaten:
         self.lastFoodEaten = None
-      # print(action)
+      # # print(action)
       return action
 
     # If no direct invaders found, THEN do the closest food aStar.
     if self.lastFoodEaten != None:
 
         action = aStarSearchToLocation(gameState, self.index, self.lastFoodEaten)
-        print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
+        # print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
         return action
     
 
-    # print("A STAR TO ENTRANCE")
+    # # print("A STAR TO ENTRANCE")
     # agent = gameState.getAgentState(agentIndex)
     # agent.isPacman
     action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
@@ -392,8 +420,8 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
       action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
       # self.entranceToPatrol = (self.entrances[len(self.entrances) - 1])
 
-    print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
-    # print(action)
+    # print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
+    # # print(action)
     return action
 
 # Method to aStar to any location on the map given the game state, and the agent index.
@@ -402,7 +430,7 @@ def aStarSearchToLocation(gameState, agentIndex, location, isScared=False, isOff
   """Search the node that has the lowest combined cost and heuristic first."""
   "*** YOUR CODE HERE ***"
 
-  # print("INSIDE OF ASTAR agent is", agentIndex, location)
+  # # print("INSIDE OF ASTAR agent is", agentIndex, location)
 
   heuristic = util.manhattanDistance
 
@@ -439,11 +467,11 @@ def aStarSearchToLocation(gameState, agentIndex, location, isScared=False, isOff
 
       # legalActions = currentGameState.getLegalActions(agentIndex)
       # if len(legalActions) == 0:
-      #   # print("No legal actions")
+      #   # # print("No legal actions")
 
       for action in currentGameState.getLegalActions(agentIndex):
         successor = currentGameState.generateSuccessor(agentIndex, action)
-        # print("Trying Action ", action)
+        # # print("Trying Action ", action)
 
         
 
@@ -452,10 +480,10 @@ def aStarSearchToLocation(gameState, agentIndex, location, isScared=False, isOff
         # This will make the defensive agent never go onto the other side.
         agent = currentGameState.getAgentState(agentIndex)
         if agent.isPacman and not isOffensive:
-          # print("isPacman")
+          # # print("isPacman")
           continue
         # else:
-          # print("NotPacman")
+          # # print("NotPacman")
 
     # for childPosition, action, cost in currentGameState.getSuccessors(currentStatePosition):
         pathToChild = currentStatePath + [action]
@@ -499,8 +527,8 @@ def findEntrances(teamIsRed, gameState):
       if currentPosition not in walls and currentPositionToRight not in walls:
         entrances.append(currentPosition)
 
-    # print("RED TEAM PRINTING ENTRANCES")
-    # print(entrances)
+    # # print("RED TEAM # printING ENTRANCES")
+    # # print(entrances)
     
   else:
     middleWidth = math.ceil((gameState.data.layout.width / 2))
@@ -516,8 +544,8 @@ def findEntrances(teamIsRed, gameState):
       if currentPosition not in walls and currentPositionToLeft not in walls:
         entrances.append(currentPosition)
 
-    # print("BLUE TEAM PRINTING ENTRANCES")
-    # print(entrances)
+    # # print("BLUE TEAM # printING ENTRANCES")
+    # # print(entrances)
 
   return entrances
 
