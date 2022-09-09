@@ -342,6 +342,10 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
     currentPosition = gameState.getAgentPosition(self.index)
     currentAgentState = gameState.getAgentState(self.index)
 
+    # If somehow you become pacman, go back to the entrance
+    if currentAgentState.isPacman:
+      action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
+      return action
 
     if currentAgentState.scaredTimer > 0:
       # actions = gameState.getLegalActions(self.index)
@@ -399,23 +403,20 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
       action = aStarSearchToLocation(gameState, self.index, self.lastFoodEaten)
       if currentPosition == self.lastFoodEaten:
         self.lastFoodEaten = None
+        # instantly go to patrol - DONT STOP
+        action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
+        # print("Moving back to patrol")
       # # print(action)
       return action
-
-    # If no direct invaders found, THEN do the closest food aStar.
-    if self.lastFoodEaten != None:
-
-        action = aStarSearchToLocation(gameState, self.index, self.lastFoodEaten)
-        # print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
-        return action
-    
 
     # # print("A STAR TO ENTRANCE")
     # agent = gameState.getAgentState(agentIndex)
     # agent.isPacman
     action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
     if action == 'Stop':
-      self.entranceToPatrol = random.choice(self.entrances)
+      # self.entranceToPatrol = random.choice(self.entrances)
+      self.entranceToPatrol = getNextEntranceToPatrol(self.entrances, self.entranceToPatrol)
+      # print(self.entranceToPatrol)
       # Do another a star so it doesn't stop. Takes more calculation time though.
       action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
       # self.entranceToPatrol = (self.entrances[len(self.entrances) - 1])
@@ -584,3 +585,22 @@ def inOwnSide(teamIsRed, gameState, agentPosition):
       return True
     else:
       return False
+
+# Method that will choose the next entrance for the defender agent to go to.
+def getNextEntranceToPatrol(entrances, currentEntrance):
+
+  # Patrol randomly between upper and lower entrances
+  upperEntrances = entrances[:len(entrances)//2]
+  lowerEntrances = entrances[len(entrances)//2:]
+
+  if currentEntrance in upperEntrances:
+    return random.choice(lowerEntrances)
+  else:
+    return random.choice(upperEntrances)
+
+
+  
+
+  
+
+
