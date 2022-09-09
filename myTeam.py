@@ -219,13 +219,12 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       self.foodEaten = 0
       # No longer need to return to an entrace
       self.entranceToReturnTo = None
-      # self.nextFoodToEat = None
 
     foodToEatList = self.getFood(gameState).asList()
 
     # If a food is eaten, just go back to a random entrance.
     if self.foodEaten > 0:
-      # Decide on an entrance to return to. The closest manhattan distance.
+      # Decide on an entrance to return to. Choose the closest entrance.
       if self.entranceToReturnTo == None:
         closestEntrance = None
         distanceToClosestEntrance = sys.maxsize
@@ -234,10 +233,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
           if distance < distanceToClosestEntrance:
             distanceToClosestEntrance = distance
             closestEntrance = entrance
-        self.entranceToReturnTo = closestEntrance
-      # print("Going back to base")
-      action = aStarSearchToLocation(gameState, self.index, self.entranceToReturnTo, False, True)
-      # print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
+      action = aStarSearchToLocation(gameState, self.index, closestEntrance, False, True)
+      print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
       return action
 
 
@@ -252,7 +249,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       self.foodEaten += 1
 
 
-    # print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
+    print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
     return action
 
 class DefensiveReflexAgent(ReflexCaptureAgent):
@@ -285,10 +282,39 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
 
     start = time.time()
 
+    # print("LAst eaten food: ", self.lastFoodEaten)
+
     action = None
+
+    # update last food eaten
+    if self.getPreviousObservation():
+      # print("Check food here")
+      eatenFoods = checkEatenFoods(self.red, self.getPreviousObservation(), gameState)
+      closestFood = None
+      
+      # Decide which food to go for when a food is eated on our side.
+      # We don't do this action straight away, as it is important we update the last food eaten
+      # BEFORE we a star to any invaders. And then, if there are no invaders, THEN we A* to food.
+      if len(eatenFoods) == 2:
+        distanceToFirstFood = util.manhattanDistance(currentPosition, eatenFoods[0])
+        distanceToSecondFood = util.manhattanDistance(currentPosition, eatenFoods[1])
+        if distanceToFirstFood < distanceToSecondFood:
+          closestFood = eatenFoods[0]
+        else:
+          closestFood = eatenFoods[1]
+      elif len(eatenFoods) == 1:
+        closestFood = eatenFoods[0]
+
+      if closestFood != None:
+        # print("Setting last eaten food")
+        self.lastFoodEaten = closestFood
+        # self.foodEaten = True
+        # print("DOING FOOD ASTAR")
 
     currentPosition = gameState.getAgentPosition(self.index)
     currentAgentState = gameState.getAgentState(self.index)
+
+
     if currentAgentState.scaredTimer > 0:
       # actions = gameState.getLegalActions(self.index)
       # print(actions)
@@ -335,7 +361,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         # self.entranceToPatrol = random.choice(self.entrances)
         self.entranceToPatrol = (self.entrances[math.floor(len(self.entrances)/2)])
 
-      # print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
+      print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
       # print(action)
       return action
 
@@ -348,34 +374,11 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
       # print(action)
       return action
 
-    # If it reaches here, no direct invaders were found
-    if self.getPreviousObservation():
-      # print("Check food here")
-      eatenFoods = checkEatenFoods(self.red, self.getPreviousObservation(), gameState)
-      closestFood = None
-      
-      # Decide which food to go for when a food is eated on our side.
-      if len(eatenFoods) == 2:
-        distanceToFirstFood = util.manhattanDistance(currentPosition, eatenFoods[0])
-        distanceToSecondFood = util.manhattanDistance(currentPosition, eatenFoods[1])
-        if distanceToFirstFood < distanceToSecondFood:
-          closestFood = eatenFoods[0]
-        else:
-          closestFood = eatenFoods[1]
-      elif len(eatenFoods) == 1:
-        closestFood = eatenFoods[0]
+    # If no direct invaders found, THEN do the closest food aStar.
+    if self.lastFoodEaten != None:
 
-<<<<<<< Updated upstream
-      if closestFood != None:
-        self.lastFoodEaten = closestFood
-        self.foodEaten = True
-        # print("DOING FOOD ASTAR")
-        action = aStarSearchToLocation(gameState, self.index, closestFood)
-        # print(action)
-=======
         action = aStarSearchToLocation(gameState, self.index, self.lastFoodEaten)
-        # print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
->>>>>>> Stashed changes
+        print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
         return action
     
 
@@ -389,7 +392,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
       action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
       # self.entranceToPatrol = (self.entrances[len(self.entrances) - 1])
 
-    # print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
+    print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
     # print(action)
     return action
 
