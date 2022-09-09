@@ -224,11 +224,16 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
     # If a food is eaten, just go back to a random entrance.
     if self.foodEaten > 0:
-      # Decide on an entrance to return to.
+      # Decide on an entrance to return to. Choose the closest entrance.
       if self.entranceToReturnTo == None:
-        self.entranceToReturnTo = random.choice(self.entrances)
-      print("Going back to base")
-      action = aStarSearchToLocation(gameState, self.index, self.entranceToReturnTo, False, True)
+        closestEntrance = None
+        distanceToClosestEntrance = sys.maxsize
+        for entrance in self.entrances:
+          distance = util.manhattanDistance(currentPosition, entrance)
+          if distance < distanceToClosestEntrance:
+            distanceToClosestEntrance = distance
+            closestEntrance = entrance
+      action = aStarSearchToLocation(gameState, self.index, closestEntrance, False, True)
       print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
       return action
 
