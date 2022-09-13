@@ -314,6 +314,9 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
 
     action = None
 
+    currentPosition = gameState.getAgentPosition(self.index)
+    currentAgentState = gameState.getAgentState(self.index)
+
     # update last food eaten
     if self.getPreviousObservation():
       # # print("Check food here")
@@ -338,9 +341,6 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         self.lastFoodEaten = closestFood
         # self.foodEaten = True
         # # print("DOING FOOD ASTAR")
-
-    currentPosition = gameState.getAgentPosition(self.index)
-    currentAgentState = gameState.getAgentState(self.index)
 
     # If somehow you become pacman, go back to the entrance
     if currentAgentState.isPacman:
@@ -597,10 +597,3 @@ def getNextEntranceToPatrol(entrances, currentEntrance):
     return random.choice(lowerEntrances)
   else:
     return random.choice(upperEntrances)
-
-
-  
-
-  
-
-
