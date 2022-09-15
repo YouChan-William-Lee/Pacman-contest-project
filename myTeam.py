@@ -235,7 +235,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
       # Q values and optimal policies
       qValues = {state: 0 for state in self.offensivePositions}
-      optimalPolicies = {state: 0 for state in self.offensivePositions}
+      optimalPolicies = {state: "action" for state in self.offensivePositions}
 
       numIterations = 150
 
@@ -245,6 +245,14 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
         for state in self.offensivePositions:
           QDict = {}
+
+          for action in self.legalOffensiveActions[state]:
+            nextState = 0 #Method that gets the next state when applying action to state
+            QDict[action] = 0 # calculateReward function, bellmans equation here
+
+        qValues[state] = 0 #Maximum of all QDict values
+
+        optimalPolicies[state] = 0 #action of that maximum q value
           
 
 
