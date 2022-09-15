@@ -191,7 +191,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
   
   
   ####################################################################################
-  # The choose action for the MDP Pacman Offensive Agent
+  # The choose action for the original A* Pacman offensive agent.
   ####################################################################################
 
   def chooseAction(self, gameState):
@@ -211,8 +211,76 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
     foodToEatList = self.getFood(gameState).asList()
 
-    action = "Stop"
+    # If pacman is currently on a food, then increase food eaten
+    # if self.getPreviousObservation():
+    #   previousFoodEaten = self.getFood(self.getPreviousObservation()).asList()
+    #   if currentPosition in previousFoodEaten:
+    #     print("Increasing food eaten")
+    #     self.foodEaten += 1
 
+    # Check if the agent is in their own side. They have returned or not returned depending on this.
+    # if inOwnSide(self.red, gameState, currentPosition):
+    #   # Set food eaten to 0.
+    #   self.foodEaten = 0
+    #   # No longer need to return to an entrace
+    #   self.entranceToReturnTo = None
+
+    # Replace the above code as no need for another method
+    if not currentAgentState.isPacman:
+      # Set food eaten to 0.
+      self.foodEaten = 0
+      # No longer need to return to an entrace
+      self.entranceToReturnTo = None
+      # If agent was pacman in previous state, then we choose another food to eat.
+      if self.getPreviousObservation():
+        previousAgentState = self.getPreviousObservation().getAgentState(self.index)
+        if previousAgentState.isPacman:
+          self.nextFoodToEat = random.choice(foodToEatList)
+
+    
+
+    # If a food is eaten, just go back to a random entrance.
+    if self.foodEaten > 0:
+      # Decide on an entrance to return to. Choose the closest entrance.
+      if self.entranceToReturnTo == None:
+        closestEntrance = None
+        distanceToClosestEntrance = sys.maxsize
+        for entrance in self.entrances:
+          distance = util.manhattanDistance(currentPosition, entrance)
+          if distance < distanceToClosestEntrance:
+            distanceToClosestEntrance = distance
+            closestEntrance = entrance
+      action = aStarSearchToLocation(gameState, self.index, closestEntrance, False, True)
+      # print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
+      return action
+
+
+    if self.nextFoodToEat == None:
+      self.nextFoodToEat = random.choice(foodToEatList)
+
+    action = aStarSearchToLocation(gameState, self.index, self.nextFoodToEat, False, True)
+
+    # If the agent is at the food to eat, then it has eaten the food.
+    if action == "Stop":
+      self.nextFoodToEat = random.choice(foodToEatList)
+      self.foodEaten += 1
+
+      ########################### WORKS HERE FOR NOW BECAUSE WE ONLY NEED TO RUN IT WHEN IT EATS ONE FOOD ITS GOING FOR  
+      # Decide on an entrance to return to. Choose the closest entrance.
+      if self.entranceToReturnTo == None:
+        closestEntrance = None
+        distanceToClosestEntrance = sys.maxsize
+        for entrance in self.entrances:
+          distance = util.manhattanDistance(currentPosition, entrance)
+          if distance < distanceToClosestEntrance:
+            distanceToClosestEntrance = distance
+            closestEntrance = entrance
+      action = aStarSearchToLocation(gameState, self.index, closestEntrance, False, True)
+      # print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
+      return action
+
+
+    # print ('eval time for offensive agent %d: %.4f' % (self.index, time.time() - start))
     return action
 
 class DefensiveReflexAgent(ReflexCaptureAgent):
