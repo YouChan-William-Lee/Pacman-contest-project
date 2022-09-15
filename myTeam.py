@@ -130,8 +130,8 @@ class ReflexCaptureAgent(CaptureAgent):
  
   def registerInitialState(self, gameState):
     self.start = gameState.getAgentPosition(self.index)
-    self.entrances = findEntrances(gameState.isOnRedTeam(self.index), gameState)
-    self.middle = findMiddleOfMap(gameState.isOnRedTeam(self.index), gameState)
+    self.entrances = findEntrances(gameState.isOnRedTeam(self.index), self.index, gameState)
+    self.middle = findMiddleOfMap(gameState.isOnRedTeam(self.index), self.index, gameState)
     self.walls = gameState.getWalls().asList()
     self.entranceToPatrol = self.middle   
     # self.entranceToPatrol = self.entrances[len(self.entrances)-1]   # Testing
@@ -180,8 +180,10 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
   def registerInitialState(self, gameState):
     self.start = gameState.getAgentPosition(self.index)
-    self.entrances = findEntrances(gameState.isOnRedTeam(self.index), gameState)
-    self.middle = findMiddleOfMap(gameState.isOnRedTeam(self.index), gameState)
+    self.entrances = findEntrances(gameState.isOnRedTeam(self.index), self.index, gameState)
+    self.offensiveEntrances = findOffensiveEntrances(gameState.isOnRedTeam(self.index), gameState, self.entrances)
+    self.middle = findMiddleOfMap(gameState.isOnRedTeam(self.index), self.index, gameState)
+    self.offensiveMiddle = findOffensiveMiddleOfMap(gameState.isOnRedTeam(self.index), gameState, self.middle)
     self.walls = gameState.getWalls().asList()  
     self.nextFoodToEat = None
     self.isScared = False
@@ -211,7 +213,16 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
     foodToEatList = self.getFood(gameState).asList()
 
-    action = "Stop"
+    # print("self.middle: ", self.middle)
+    # print("self.offensiveMiddle: ", self.offensiveMiddle)
+    # print("self.entrances", self.entrances)
+    # print("self.offensiveEntrances", self.offensiveEntrances)
+
+    
+    # print(self.offensiveMiddle)
+    action = aStarSearchToLocation(gameState, self.index, self.offensiveMiddle, self.isScared)
+
+
 
     return action
 
@@ -225,8 +236,8 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
 
   def registerInitialState(self, gameState):
     self.start = gameState.getAgentPosition(self.index)
-    self.entrances = findEntrances(gameState.isOnRedTeam(self.index), gameState)
-    self.middle = findMiddleOfMap(gameState.isOnRedTeam(self.index), gameState)
+    self.entrances = findEntrances(gameState.isOnRedTeam(self.index), self.index, gameState)
+    self.middle = findMiddleOfMap(gameState.isOnRedTeam(self.index), self.index, gameState)
     self.walls = gameState.getWalls().asList()
     self.entranceToPatrol = self.middle   
     # self.entranceToPatrol = self.entrances[len(self.entrances)-1]   # Testing
@@ -442,8 +453,51 @@ def aStarSearchToLocation(gameState, agentIndex, location, isScared=False, isOff
   # return []
   return "Stop"
 
-# Method that finds all entrances
-def findEntrances(teamIsRed, gameState):
+# Method that finds all entrances.
+# toAttack specificies if the entrances you should find are offensive entrances.
+# def findEntrances(teamIsRed, gameState, toAttack=False):
+  
+#   location = None
+
+#   walls = gameState.getWalls().asList()
+
+#   if (teamIsRed and not toAttack) or (not teamIsRed and toAttack):
+#     middleWidth = math.floor((gameState.data.layout.width / 2)) - 1
+
+#     entrances = []
+
+#     # Red team checks their end and the slot to the right which is the blue teams end.
+#     # If they are both empty, then it is an entrance.
+#     for i in range(gameState.data.layout.height - 1):
+#       currentPosition = (middleWidth, i)
+#       currentPositionToRight = (middleWidth + 1, i)
+      
+#       if currentPosition not in walls and currentPositionToRight not in walls:
+#         entrances.append(currentPosition)
+
+#     # # print("RED TEAM # printING ENTRANCES")
+#     # # print(entrances)
+    
+#   elif (not teamIsRed and not toAttack) or (teamIsRed and toAttack):
+#     middleWidth = math.ceil((gameState.data.layout.width / 2))
+
+#     entrances = []
+
+#     # Blue team checks their end and the slot to the left which is the red teams end.
+#     # If they are both empty, then it is an entrance.
+#     for i in range(gameState.data.layout.height - 1):
+#       currentPosition = (middleWidth, i)
+#       currentPositionToLeft = (middleWidth - 1, i)
+      
+#       if currentPosition not in walls and currentPositionToLeft not in walls:
+#         entrances.append(currentPosition)
+
+
+#   return entrances
+
+
+# Method to find all entrances. First finds them, then checks that they are valid.
+def findEntrances(teamIsRed, agentIndex, gameState):
   
   location = None
 
@@ -483,13 +537,44 @@ def findEntrances(teamIsRed, gameState):
     # # print("BLUE TEAM # printING ENTRANCES")
     # # print(entrances)
 
-  return entrances
+  # Check validity of entrances
+
+  validEntrances = []
+  for entrance in entrances:
+    if aStarSearchToLocation(gameState, agentIndex, entrance) != 'Stop':
+      validEntrances.append(entrance)
+
+  return validEntrances
+
+
+# Method that finds all offensive entrances
+def findOffensiveEntrances(teamIsRed, gameState, entrances):
+
+  offensiveEntrances = []
+
+  for entrance in entrances:
+    if teamIsRed:
+      offensiveEntrance = (entrance[0] + 1, entrance[1])
+    else:
+      offensiveEntrance = (entrance[0] - 1, entrance[1])
+
+    offensiveEntrances.append(offensiveEntrance)
+
+  return offensiveEntrances
 
 # Find the middle of the map by finding all entrances and getting the middle entrance.
 # WARNING: This may mess up in cases where an entrance is unreachable
-def findMiddleOfMap(teamIsRed, gameState):
-  entrances = findEntrances(teamIsRed, gameState)
+def findMiddleOfMap(teamIsRed, agentIndex, gameState):
+  entrances = findEntrances(teamIsRed, agentIndex, gameState)
   return entrances[math.ceil(len(entrances)/2)] 
+
+# Find the offensive middle of the map
+def findOffensiveMiddleOfMap(teamIsRed, gameState, defensiveMiddle):
+  if teamIsRed:
+    return (defensiveMiddle[0]+1, defensiveMiddle[1])
+  else:
+    return (defensiveMiddle[0]-1, defensiveMiddle[1])
+
 
 # Method that will check for food that is eaten on the agent's own team.
 # Return list of food.
@@ -504,22 +589,6 @@ def checkEatenFoods(teamIsRed, previousState, currentState):
     currentFood = currentState.getBlueFood().asList()
 
   return list(set(previousFood) - set(currentFood))
-
-# Method to determine whether an agent is in their own side.
-def inOwnSide(teamIsRed, gameState, agentPosition):
-
-  if teamIsRed:
-    middleWidth = math.floor((gameState.data.layout.width / 2)) - 1
-    if agentPosition[0] <= middleWidth:
-      return True
-    else:
-      return False
-  else:
-    middleWidth = math.ceil((gameState.data.layout.width / 2))
-    if agentPosition[0] >= middleWidth:
-      return True
-    else:
-      return False
 
 # Method that will choose the next entrance for the defender agent to go to.
 def getNextEntranceToPatrol(entrances, currentEntrance):
