@@ -189,6 +189,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.isScared = False
     self.foodEaten = 0
     self.entranceToReturnTo = None
+    self.offensivePositions = getAllOffensivePositions(gameState.isOnRedTeam(self.index), gameState)
     CaptureAgent.registerInitialState(self, gameState)
   
   
@@ -220,10 +221,22 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
     
     # print(self.offensiveMiddle)
+
+    if currentAgentState.isPacman:
+      # if pacman, then do MDP
+      print("Do MDP")
+
+      
+
+      
+
+    # If this occurs, then agent is making its way to the center of the map to attack.
     action = aStarSearchToLocation(gameState, self.index, self.offensiveMiddle, self.isScared)
 
 
 
+
+    print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
     return action
 
 class DefensiveReflexAgent(ReflexCaptureAgent):
@@ -601,3 +614,28 @@ def getNextEntranceToPatrol(entrances, currentEntrance):
     return random.choice(lowerEntrances)
   else:
     return random.choice(upperEntrances)
+
+
+# OFFENSIVE MDP METHODS!!!!
+
+# Method that gets all offensive positions of an agent.
+def getAllOffensivePositions(teamIsRed, gameState):
+  positions = []
+  width = gameState.data.layout.width
+  height = gameState.data.layout.height
+
+  startingX = 0
+  endingX = math.floor((gameState.data.layout.width / 2))
+
+  if teamIsRed:
+    startingX = math.ceil((gameState.data.layout.width / 2))
+    endingX = width
+
+  for x in range(startingX, endingX):
+    for y in range(height):
+      if not gameState.hasWall(x,y):
+        positions.append((x,y))
+
+  # print(positions)
+
+  return positions
