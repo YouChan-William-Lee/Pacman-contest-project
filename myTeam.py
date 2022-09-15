@@ -190,6 +190,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.foodEaten = 0
     self.entranceToReturnTo = None
     self.offensivePositions = getAllOffensivePositions(gameState.isOnRedTeam(self.index), gameState)
+    self.legalOffensiveActions = getLegalOffensiveActions(gameState, gameState.isOnRedTeam(self.index))
+    
     CaptureAgent.registerInitialState(self, gameState)
   
   
@@ -222,9 +224,29 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     
     # print(self.offensiveMiddle)
 
+    # print("offensive positions")
+    # print(self.offensivePositions)
+    # print("legal offensive actions")
+    # print(self.legalOffensiveActions)
+
     if currentAgentState.isPacman:
       # if pacman, then do MDP
       print("Do MDP")
+
+      # Q values and optimal policies
+      qValues = {state: 0 for state in self.offensivePositions}
+      optimalPolicies = {state: 0 for state in self.offensivePositions}
+
+      numIterations = 150
+
+      # Value iteration
+      for i in range(numIterations):
+        newQValues = qValues.copy()
+
+        for state in self.offensivePositions:
+          QDict = {}
+          
+
 
       
 
@@ -619,16 +641,20 @@ def getNextEntranceToPatrol(entrances, currentEntrance):
 # OFFENSIVE MDP METHODS!!!!
 
 # Method that gets all offensive positions of an agent.
-def getAllOffensivePositions(teamIsRed, gameState):
+def getAllOffensivePositions(teamIsRed, gameState, returnState=False):
   positions = []
   width = gameState.data.layout.width
   height = gameState.data.layout.height
 
   startingX = 0
   endingX = math.floor((gameState.data.layout.width / 2))
+  if returnState:
+    endingX = math.floor((gameState.data.layout.width / 2)) + 1
 
   if teamIsRed:
     startingX = math.ceil((gameState.data.layout.width / 2))
+    if returnState:
+      startingX = math.ceil((gameState.data.layout.width / 2)) - 1
     endingX = width
 
   for x in range(startingX, endingX):
@@ -639,3 +665,36 @@ def getAllOffensivePositions(teamIsRed, gameState):
   # print(positions)
 
   return positions
+
+# Method that returns all legal offensive actions for a state
+def getLegalOffensiveActions(gameState, teamIsRed):
+  
+  allStateLegalActions = {}
+
+  possibleStates = getAllOffensivePositions(teamIsRed, gameState, True) # True because we want to include returning to base
+
+  # print(possibleStates)
+
+  for state in possibleStates:
+
+    xPosition = state[0]
+    yPosition = state[1]
+
+    legalActions = []
+
+    moveUpPosition = (xPosition, yPosition + 1)
+    if not gameState.hasWall(moveUpPosition[0], moveUpPosition[1]) and moveUpPosition in possibleStates:
+      legalActions.append(Directions.NORTH)
+    moveRightPosition = (xPosition + 1, yPosition)
+    if not gameState.hasWall(moveRightPosition[0], moveRightPosition[1]) and moveRightPosition in possibleStates:
+      legalActions.append(Directions.EAST)
+    moveDownPosition = (xPosition, yPosition - 1)
+    if not gameState.hasWall(moveDownPosition[0], moveDownPosition[1]) and moveDownPosition in possibleStates:
+      legalActions.append(Directions.SOUTH)
+    moveLeftPosition = (xPosition - 1, yPosition)
+    if not gameState.hasWall(moveLeftPosition[0], moveLeftPosition[1]) and moveLeftPosition in possibleStates:
+      legalActions.append(Directions.WEST)
+
+    allStateLegalActions[state] = legalActions
+
+  return allStateLegalActions
