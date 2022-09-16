@@ -193,6 +193,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.offensivePositions = getAllOffensivePositions(gameState.isOnRedTeam(self.index), gameState, True)
     self.legalOffensiveActions = getLegalOffensiveActions(gameState, gameState.isOnRedTeam(self.index))
     self.discountFactor = 0.9 # Gamma/Discount factor for MDP time steps.
+    self.offensiveFoodEaten = 0
+    self.storeFood = False
     
     CaptureAgent.registerInitialState(self, gameState)
   
@@ -218,7 +220,21 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
     foodToEatList = self.getFood(gameState).asList()
 
+
+
     capsuleList = self.getCapsules(gameState)
+
+    
+    previousState = self.getPreviousObservation()
+    if previousState != None:
+      previousFoodList = self.getFood(previousState).asList()
+      if currentPosition in previousFoodList:
+        self.offensiveFoodEaten += 1
+        print("Ate food")
+
+
+
+
 
     # print("self.middle: ", self.middle)
     # print("self.offensiveMiddle: ", self.offensiveMiddle)
@@ -234,9 +250,16 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     # print(self.legalOffensiveActions)
 
     if currentAgentState.isPacman:
-      action = performValueIteration(self.offensivePositions,self.legalOffensiveActions,self.discountFactor,currentPosition,foodToEatList,capsuleList)
+      # Currently just checking if its eaten a certain number of food. Maybe we can come up with a formula
+      # to let it decide on its own when to go back to store food.
+      if self.offensiveFoodEaten > 4:
+        self.storeFood = True
+      action = performValueIteration(self.offensivePositions,self.legalOffensiveActions,self.discountFactor,currentPosition,foodToEatList,capsuleList, self.entrances, self.storeFood)
       print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
       return action
+    else:
+      self.offensiveFoodEaten = 0
+      self.storeFood = False
           
 
 
@@ -665,22 +688,20 @@ def generateSuccessor(gameState, action):
     return (x,y)
 
 # MDP function to calculate the reward.
-def calculateMDPReward(state, foodList, capsuleList):
+def calculateMDPReward(state, foodList, capsuleList, entrances, storeFood):
   reward = 0
   if state in foodList:
     reward += 1
   if state in capsuleList:
     reward += 5
 
-
-
+  if state in entrances and storeFood:
+    reward += 100
 
   return reward
 
 # Method to perform the value iteration. Returns an action.
-def performValueIteration(offensivePositions, legalOffensiveActions, discountFactor, currentPosition, foodList, capsuleList):
-  # if pacman, then do MDP
-  # print("Do MDP")
+def performValueIteration(offensivePositions, legalOffensiveActions, discountFactor, currentPosition, foodList, capsuleList, entrances, storeFood):
 
   # optimal policy which stores action and q value as a tuple
   optimalPolicies = {state: ("Stop", 0.0) for state in offensivePositions}
@@ -689,26 +710,20 @@ def performValueIteration(offensivePositions, legalOffensiveActions, discountFac
   ACTION_INDEX = 0
   Q_VALUE_INDEX = 1
 
-  numIterations = 100
+  numIterations = 150
 
   # Value iteration
   for i in range(numIterations):
     previousPolicies = optimalPolicies.copy()
 
-    # print("Iteration:", i)
-
     for state in offensivePositions:
       QDict = {}
 
       for action in legalOffensiveActions[state]:
-        # print("Current State:", state)
         childState = generateSuccessor(state, action) #Method that gets the child state when applying action to state
-        # print("Child State:", childState)
         # calculateReward function, bellmans equation here. R(s) + gamma * next state utility
-        QDict[action] = calculateMDPReward(state, foodList, capsuleList) + discountFactor * previousPolicies[childState][Q_VALUE_INDEX]
-
+        QDict[action] = calculateMDPReward(state, foodList, capsuleList, entrances, storeFood) + discountFactor * previousPolicies[childState][Q_VALUE_INDEX]
       optimalPolicies[state] = (getActionOfMaxQValue(QDict), max(QDict.values()))
-
   return optimalPolicies[currentPosition][ACTION_INDEX]
 
 # Method used to quickly get the key of the max q value in the q dictionary.
