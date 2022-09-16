@@ -189,7 +189,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.isScared = False
     self.foodEaten = 0
     self.entranceToReturnTo = None
-    self.offensivePositions = getAllOffensivePositions(gameState.isOnRedTeam(self.index), gameState)
+    # Setting allow return State as true but this may cause issues in the future. Will need to double check.
+    self.offensivePositions = getAllOffensivePositions(gameState.isOnRedTeam(self.index), gameState, True)
     self.legalOffensiveActions = getLegalOffensiveActions(gameState, gameState.isOnRedTeam(self.index))
     self.discountFactor = 0.9 # Gamma/Discount factor for MDP time steps.
     
@@ -231,7 +232,9 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     # print(self.legalOffensiveActions)
 
     if currentAgentState.isPacman:
-      return performValueIteration(self.offensivePositions, self.legalOffensiveActions, self.discountFactor)
+      action = performValueIteration(self.offensivePositions, self.legalOffensiveActions, self.discountFactor, currentPosition)
+      print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
+      return action
           
 
 
@@ -664,28 +667,34 @@ def calculateMDPReward():
   return 0
 
 # Method to perform the value iteration. Returns an action.
-def performValueIteration(offensivePositions, legalOffensiveActions, discountFactor):
+def performValueIteration(offensivePositions, legalOffensiveActions, discountFactor, currentPosition):
   # if pacman, then do MDP
-  print("Do MDP")
+  # print("Do MDP")
 
   # Q values and optimal policies
   qValues = {state: 0 for state in offensivePositions}
-  optimalPolicies = {state: "action" for state in offensivePositions}
+  optimalPolicies = {state: "Stop" for state in offensivePositions}
 
-  numIterations = 150
+  numIterations = 100
 
   # Value iteration
   for i in range(numIterations):
     previousQValues = qValues.copy()
 
+    # print("Iteration:", i)
+
     for state in offensivePositions:
       QDict = {}
 
       for action in legalOffensiveActions[state]:
+        # print("Current State:", state)
         childState = generateSuccessor(state, action) #Method that gets the child state when applying action to state
+        # print("Child State:", childState)
         # calculateReward function, bellmans equation here. R(s) + gamma * next state utility
-        QDict[action] = calculateMDPReward()  + discountFactor * previousQValues[childState]
+        QDict[action] = calculateMDPReward() + discountFactor * previousQValues[childState]
 
     qValues[state] = 0 #Maximum of all QDict values
 
-    optimalPolicies[state] = 0 #action of that maximum q value
+    optimalPolicies[state] = "Stop" #action of that maximum q value
+
+  return optimalPolicies[currentPosition]
