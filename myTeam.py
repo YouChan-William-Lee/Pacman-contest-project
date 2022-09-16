@@ -218,6 +218,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
     foodToEatList = self.getFood(gameState).asList()
 
+    capsuleList = self.getCapsules(gameState)
+
     # print("self.middle: ", self.middle)
     # print("self.offensiveMiddle: ", self.offensiveMiddle)
     # print("self.entrances", self.entrances)
@@ -232,7 +234,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     # print(self.legalOffensiveActions)
 
     if currentAgentState.isPacman:
-      action = performValueIteration(self.offensivePositions, self.legalOffensiveActions, self.discountFactor, currentPosition)
+      action = performValueIteration(self.offensivePositions,self.legalOffensiveActions,self.discountFactor,currentPosition,foodToEatList,capsuleList)
       print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
       return action
           
@@ -663,11 +665,20 @@ def generateSuccessor(gameState, action):
     return (x,y)
 
 # MDP function to calculate the reward.
-def calculateMDPReward():
-  return 0
+def calculateMDPReward(state, foodList, capsuleList):
+  reward = 0
+  if state in foodList:
+    reward += 1
+  if state in capsuleList:
+    reward += 5
+
+
+
+
+  return reward
 
 # Method to perform the value iteration. Returns an action.
-def performValueIteration(offensivePositions, legalOffensiveActions, discountFactor, currentPosition):
+def performValueIteration(offensivePositions, legalOffensiveActions, discountFactor, currentPosition, foodList, capsuleList):
   # if pacman, then do MDP
   # print("Do MDP")
 
@@ -691,10 +702,20 @@ def performValueIteration(offensivePositions, legalOffensiveActions, discountFac
         childState = generateSuccessor(state, action) #Method that gets the child state when applying action to state
         # print("Child State:", childState)
         # calculateReward function, bellmans equation here. R(s) + gamma * next state utility
-        QDict[action] = calculateMDPReward() + discountFactor * previousQValues[childState]
+        QDict[action] = calculateMDPReward(state, foodList, capsuleList) + discountFactor * previousQValues[childState]
+        # print(QDict)
 
-    qValues[state] = 0 #Maximum of all QDict values
+      qValues[state] = max(QDict.values()) #Maximum of all QDict values
 
-    optimalPolicies[state] = "Stop" #action of that maximum q value
+      # optimalPolicies[state] = "Stop" #action of that maximum q value
+      optimalPolicies[state] = getActionOfMaxQValue(QDict)
+      # if i == 99:
+      #   print(QDict)
 
   return optimalPolicies[currentPosition]
+
+# Method used to quickly get the key of the max q value in the q dictionary.
+def getActionOfMaxQValue(QDict):
+  qValues = list(QDict.values())
+  actions = list(QDict.keys())
+  return actions[qValues.index(max(qValues))]
