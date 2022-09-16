@@ -799,7 +799,7 @@ currentPosition, foodList, capsuleList, entrances, storeFood, beingChased, ghost
   ACTION_INDEX = 0
   Q_VALUE_INDEX = 1
 
-  numIterations = 150
+  numIterations = 100
 
   # Value iteration
   for i in range(numIterations):
