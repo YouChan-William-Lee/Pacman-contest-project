@@ -230,7 +230,17 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       previousFoodList = self.getFood(previousState).asList()
       if currentPosition in previousFoodList:
         self.offensiveFoodEaten += 1
-        print("Ate food")
+        # print("Ate food")
+
+    beingChased = False
+
+    ghostAgents = []
+
+    for agent in self.getOpponents(gameState):
+      enemy = gameState.getAgentState(agent)
+      if enemy.getPosition() != None and enemy.scaredTimer <= 1:
+        beingChased = True
+        ghostAgents.append(enemy)
 
 
 
@@ -254,7 +264,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       # to let it decide on its own when to go back to store food.
       if self.offensiveFoodEaten > 4:
         self.storeFood = True
-      action = performValueIteration(self.offensivePositions,self.legalOffensiveActions,self.discountFactor,currentPosition,foodToEatList,capsuleList, self.entrances, self.storeFood)
+      action = performValueIteration(self.offensivePositions,self.legalOffensiveActions,self.discountFactor,currentPosition,
+      foodToEatList,capsuleList, self.entrances, self.storeFood, beingChased, ghostAgents, self.offensiveFoodEaten)
       print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
       return action
     else:
@@ -688,20 +699,35 @@ def generateSuccessor(gameState, action):
     return (x,y)
 
 # MDP function to calculate the reward.
-def calculateMDPReward(state, foodList, capsuleList, entrances, storeFood):
+def calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, beingChased, ghostAgents, offensiveFoodEaten):
   reward = 0
   if state in foodList:
     reward += 1
   if state in capsuleList:
+    # Very good to get capsule if being chased
+    if beingChased:
+      reward += 100
     reward += 5
 
   if state in entrances and storeFood:
     reward += 100
 
+  if beingChased:
+    # If the ghost is being chased, give a lot of reward for returning home to store the food.
+    if state in entrances and offensiveFoodEaten > 0:
+      reward += 1000
+    for ghost in ghostAgents:
+      ghostDistance = util.manhattanDistance(state, ghost.getPosition())
+      if ghostDistance == 0:
+        return -sys.maxsize - 1
+      else:
+        reward -= 1/ghostDistance
+
   return reward
 
 # Method to perform the value iteration. Returns an action.
-def performValueIteration(offensivePositions, legalOffensiveActions, discountFactor, currentPosition, foodList, capsuleList, entrances, storeFood):
+def performValueIteration(offensivePositions, legalOffensiveActions, discountFactor,
+currentPosition, foodList, capsuleList, entrances, storeFood, beingChased, ghostAgents, offensiveFoodEaten):
 
   # optimal policy which stores action and q value as a tuple
   optimalPolicies = {state: ("Stop", 0.0) for state in offensivePositions}
@@ -722,7 +748,7 @@ def performValueIteration(offensivePositions, legalOffensiveActions, discountFac
       for action in legalOffensiveActions[state]:
         childState = generateSuccessor(state, action) #Method that gets the child state when applying action to state
         # calculateReward function, bellmans equation here. R(s) + gamma * next state utility
-        QDict[action] = calculateMDPReward(state, foodList, capsuleList, entrances, storeFood) + discountFactor * previousPolicies[childState][Q_VALUE_INDEX]
+        QDict[action] = calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, beingChased, ghostAgents, offensiveFoodEaten) + discountFactor * previousPolicies[childState][Q_VALUE_INDEX]
       optimalPolicies[state] = (getActionOfMaxQValue(QDict), max(QDict.values()))
   return optimalPolicies[currentPosition][ACTION_INDEX]
 
