@@ -14,6 +14,7 @@
 
 from captureAgents import CaptureAgent
 import random, time, util
+from distanceCalculator import DistanceCalculator
 from game import Directions
 import game
 
@@ -244,15 +245,41 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     beingChased = False
 
     ghostAgents = []
+    seenInvaders = []
+    closestInvader = None
+    ghostDistances = []
 
     for agent in self.getOpponents(gameState):
       enemy = gameState.getAgentState(agent)
-      if enemy.getPosition() != None and enemy.scaredTimer <= 1:
-        beingChased = True
-        ghostAgents.append(enemy)
+      if enemy.getPosition() != None:
+        if currentAgentState.isPacman:
+          if enemy.scaredTimer <= 1:
+            if util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3:
+              beingChased = True
+              ghostAgents.append(enemy)
+            # ghostDistances.append(self.distancer.getDistance(currentPosition, enemy.getPosition()))
 
-
-
+        # If currently the agent is on defense and it sees a pacman, chase
+        else:
+          if enemy.isPacman:
+            team = self.getTeam(gameState)
+            # get index of teammate
+            teammateIndex = -1
+            for teammate in team:
+              if teammate != self.index:
+                teammateIndex = teammate
+            # Only chase pacman if the defender teammate is not closer to the enemy or it is very close to the enemy
+            if (util.manhattanDistance(gameState.getAgentPosition(teammateIndex), enemy.getPosition()) > 5) or (util.manhattanDistance(gameState.getAgentPosition(self.index), enemy.getPosition()) <= 1):
+              action = aStarSearchToLocation(gameState, self.index, enemy.getPosition(), self.isScared)
+              print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
+              print("Chasing pacman")
+              return action
+          else:
+            # If there is a defender very close to this entrance, choose antother entrance
+            if util.manhattanDistance(enemy.getPosition(), currentPosition) <= 5 and currentPosition in self.entrances:
+              # Choosing another entrance
+              print("Choose another entrance")
+              self.nextAttackingPoint = random.choice(self.offensiveEntrances)
 
 
     # print("self.middle: ", self.middle)
@@ -274,8 +301,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       if self.offensiveFoodEaten > 4:
         self.storeFood = True
       action = performValueIteration(self.offensivePositions,self.legalOffensiveActions,self.discountFactor,currentPosition,
-      foodToEatList,capsuleList, self.entrances, self.storeFood, beingChased, ghostAgents, self.offensiveFoodEaten)
-      print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
+      foodToEatList,capsuleList, self.entrances, self.storeFood, beingChased, ghostAgents, self.offensiveFoodEaten, gameState)
+      print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
       return action
     else:
       self.offensiveFoodEaten = 0
@@ -301,7 +328,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
 
 
-    print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
+    print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
     return action
 
 class DefensiveReflexAgent(ReflexCaptureAgent):
@@ -716,10 +743,11 @@ def generateSuccessor(gameState, action):
     return (x,y)
 
 # MDP function to calculate the reward.
-def calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, beingChased, ghostAgents, offensiveFoodEaten):
+def calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState):
   reward = 0
   if state in foodList:
     reward += 1
+    # reward += len(foodList) - offensiveFoodEaten
   if state in capsuleList:
     # Very good to get capsule if being chased
     if beingChased:
@@ -739,12 +767,21 @@ def calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, being
         return -sys.maxsize - 1
       else:
         reward -= 1/ghostDistance
+    # for distance in ghostDistances:
+    #   if distance == 0:
+    #     return -sys.maxsize - 1
+    #   reward -= 100/(distance+1)
+
+    if checkSurroundingWalls(state, gameState):
+      reward -= 50
+
+
 
   return reward
 
 # Method to perform the value iteration. Returns an action.
 def performValueIteration(offensivePositions, legalOffensiveActions, discountFactor,
-currentPosition, foodList, capsuleList, entrances, storeFood, beingChased, ghostAgents, offensiveFoodEaten):
+currentPosition, foodList, capsuleList, entrances, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState):
 
   # optimal policy which stores action and q value as a tuple
   optimalPolicies = {state: ("Stop", 0.0) for state in offensivePositions}
@@ -765,7 +802,7 @@ currentPosition, foodList, capsuleList, entrances, storeFood, beingChased, ghost
       for action in legalOffensiveActions[state]:
         childState = generateSuccessor(state, action) #Method that gets the child state when applying action to state
         # calculateReward function, bellmans equation here. R(s) + gamma * next state utility
-        QDict[action] = calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, beingChased, ghostAgents, offensiveFoodEaten) + discountFactor * previousPolicies[childState][Q_VALUE_INDEX]
+        QDict[action] = calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState) + discountFactor * previousPolicies[childState][Q_VALUE_INDEX]
       optimalPolicies[state] = (getActionOfMaxQValue(QDict), max(QDict.values()))
   return optimalPolicies[currentPosition][ACTION_INDEX]
 
@@ -774,3 +811,23 @@ def getActionOfMaxQValue(QDict):
   qValues = list(QDict.values())
   actions = list(QDict.keys())
   return actions[qValues.index(max(qValues))]
+
+# Checks how many walls are around pacman
+def checkSurroundingWalls(position, gameState):
+  x = position[0]
+  y = position[1]
+  numWalls = 0
+
+  if gameState.hasWall(x, y + 1):
+    numWalls += 1
+  if gameState.hasWall(x + 1, y):
+    numWalls += 1
+  if gameState.hasWall(x, y - 1):
+    numWalls += 1
+  if gameState.hasWall(x - 1, y):
+    numWalls += 1
+
+  if numWalls >= 3:
+    return True
+  return False
+
