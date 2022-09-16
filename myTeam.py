@@ -220,6 +220,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     currentPosition = gameState.getAgentPosition(self.index)
     currentAgentState = gameState.getAgentState(self.index)
 
+    currentDirection = currentAgentState.getDirection()
+
     foodToEatList = self.getFood(gameState).asList()
 
 
@@ -301,7 +303,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       if self.offensiveFoodEaten > 4:
         self.storeFood = True
       action = performValueIteration(self.offensivePositions,self.legalOffensiveActions,self.discountFactor,currentPosition,
-      foodToEatList,capsuleList, self.entrances, self.storeFood, beingChased, ghostAgents, self.offensiveFoodEaten, gameState)
+      foodToEatList,capsuleList, self.entrances, self.storeFood, beingChased, ghostAgents, self.offensiveFoodEaten, gameState, currentDirection)
       print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
       return action
     else:
@@ -728,22 +730,23 @@ def getLegalOffensiveActions(gameState, teamIsRed):
 
 # MDP method to generate the successor of a game state and an action made.
 # Game state is the position, action is which direction it moves to.
-def generateSuccessor(gameState, action):
+def generateSuccessor(gameState, action, currentDirection):
   x = gameState[0]
   y = gameState[1]
   if action == Directions.NORTH:
-    return (x,y+1)
+    return ((x,y+1), Directions.NORTH)
   elif action == Directions.EAST:
-    return (x+1,y)
+    return ((x+1,y), Directions.EAST)
   elif action == Directions.SOUTH:
-    return (x,y-1)
+    return ((x,y-1), Directions.SOUTH)
   elif action == Directions.WEST:
-    return (x-1,y)
+    return ((x-1,y), Directions.WEST)
   else:
-    return (x,y)
+    return ((x,y), currentDirection)
 
 # MDP function to calculate the reward.
-def calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState):
+def calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState, previousDirection,
+currentDirection):
   reward = 0
   if state in foodList:
     # reward += 1
@@ -759,6 +762,9 @@ def calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, being
       reward += 100
     elif offensiveFoodEaten > 0:
       reward += 5*offensiveFoodEaten
+
+  if checkOppositeDirections(previousDirection, currentDirection):
+    reward -= 10
 
   if beingChased:
     # If the ghost is being chased, give a lot of reward for returning home to store the food.
@@ -784,7 +790,7 @@ def calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, being
 
 # Method to perform the value iteration. Returns an action.
 def performValueIteration(offensivePositions, legalOffensiveActions, discountFactor,
-currentPosition, foodList, capsuleList, entrances, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState):
+currentPosition, foodList, capsuleList, entrances, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState, currentDirection):
 
   # optimal policy which stores action and q value as a tuple
   optimalPolicies = {state: ("Stop", 0.0) for state in offensivePositions}
@@ -803,9 +809,10 @@ currentPosition, foodList, capsuleList, entrances, storeFood, beingChased, ghost
       QDict = {}
 
       for action in legalOffensiveActions[state]:
-        childState = generateSuccessor(state, action) #Method that gets the child state when applying action to state
+        childState = generateSuccessor(state, action, currentDirection) #Method that gets the child state when applying action to state
         # calculateReward function, bellmans equation here. R(s) + gamma * next state utility
-        QDict[action] = calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState) + discountFactor * previousPolicies[childState][Q_VALUE_INDEX]
+        QDict[action] = calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, beingChased,
+        ghostAgents, offensiveFoodEaten, gameState, currentDirection, childState[1]) + discountFactor * previousPolicies[childState[0]][Q_VALUE_INDEX]
       optimalPolicies[state] = (getActionOfMaxQValue(QDict), max(QDict.values()))
   return optimalPolicies[currentPosition][ACTION_INDEX]
 
@@ -814,6 +821,22 @@ def getActionOfMaxQValue(QDict):
   qValues = list(QDict.values())
   actions = list(QDict.keys())
   return actions[qValues.index(max(qValues))]
+
+# Returns true if the new direction is the opposite of the previous direction
+def checkOppositeDirections(previousDirection, currentDirection):
+  if previousDirection == Directions.NORTH:
+    if currentDirection == Directions.SOUTH:
+      return True
+  if previousDirection == Directions.EAST:
+    if currentDirection == Directions.WEST:
+      return True
+  if previousDirection == Directions.SOUTH:
+    if currentDirection == Directions.NORTH:
+      return True
+  if previousDirection == Directions.WEST:
+    if currentDirection == Directions.EAST:
+      return True
+  return False
 
 # Checks how many walls are around pacman
 def checkSurroundingWalls(position, gameState):
