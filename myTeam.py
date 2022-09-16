@@ -746,16 +746,19 @@ def generateSuccessor(gameState, action):
 def calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState):
   reward = 0
   if state in foodList:
-    reward += 1
-    # reward += len(foodList) - offensiveFoodEaten
+    # reward += 1
+    reward += len(foodList) / (offensiveFoodEaten + 1)
   if state in capsuleList:
     # Very good to get capsule if being chased
     if beingChased:
       reward += 100
     reward += 1
 
-  if state in entrances and storeFood:
-    reward += 100
+  if state in entrances:
+    if storeFood:
+      reward += 100
+    elif offensiveFoodEaten > 0:
+      reward += 5*offensiveFoodEaten
 
   if beingChased:
     # If the ghost is being chased, give a lot of reward for returning home to store the food.
