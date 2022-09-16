@@ -195,6 +195,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.discountFactor = 0.9 # Gamma/Discount factor for MDP time steps.
     self.offensiveFoodEaten = 0
     self.storeFood = False
+    self.nextAttackingPoint = None
     
     CaptureAgent.registerInitialState(self, gameState)
   
@@ -224,6 +225,10 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
     capsuleList = self.getCapsules(gameState)
 
+    if self.nextAttackingPoint == None:
+      # Set a random attacking point
+      self.nextAttackingPoint = random.choice(self.offensiveEntrances)
+
     
     previousState = self.getPreviousObservation()
     if previousState != None:
@@ -231,6 +236,10 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       if currentPosition in previousFoodList:
         self.offensiveFoodEaten += 1
         # print("Ate food")
+      previousAgentState = previousState.getAgentState(self.index)
+      if previousAgentState.isPacman and not currentAgentState.isPacman:
+        # If pacman returned back for any reason, set a new attacking point
+        self.nextAttackingPoint = random.choice(self.offensiveEntrances)
 
     beingChased = False
 
@@ -279,7 +288,15 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       
 
     # If this occurs, then agent is making its way to the center of the map to attack.
-    action = aStarSearchToLocation(gameState, self.index, self.offensiveMiddle, self.isScared)
+    # action = aStarSearchToLocation(gameState, self.index, self.offensiveMiddle, self.isScared)
+    # action = aStarSearchToLocation(gameState, self.index, self.entrances[len(self.entrances)-1], self.isScared)
+    # if action == 'Stop':
+    #   if gameState.isOnRedTeam(self.index):
+    #     action = 'East'
+    #   else:
+    #     action = 'West'
+
+    action = aStarSearchToLocation(gameState, self.index, self.nextAttackingPoint, self.isScared)
 
 
 
@@ -707,7 +724,7 @@ def calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, being
     # Very good to get capsule if being chased
     if beingChased:
       reward += 100
-    reward += 5
+    reward += 1
 
   if state in entrances and storeFood:
     reward += 100
@@ -715,7 +732,7 @@ def calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, being
   if beingChased:
     # If the ghost is being chased, give a lot of reward for returning home to store the food.
     if state in entrances and offensiveFoodEaten > 0:
-      reward += 1000
+      reward += 100
     for ghost in ghostAgents:
       ghostDistance = util.manhattanDistance(state, ghost.getPosition())
       if ghostDistance == 0:
