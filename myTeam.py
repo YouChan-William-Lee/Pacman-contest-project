@@ -278,7 +278,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
               return action
           else:
             # If there is a defender very close to this entrance, choose antother entrance
-            if util.manhattanDistance(enemy.getPosition(), currentPosition) <= 5 and currentPosition in self.entrances:
+            if util.manhattanDistance(enemy.getPosition(), currentPosition) <= 5 and currentPosition in self.entrances and enemy.scaredTimer <= 1:
               # Choosing another entrance
               print("Choose another entrance")
               self.nextAttackingPoint = random.choice(self.offensiveEntrances)
