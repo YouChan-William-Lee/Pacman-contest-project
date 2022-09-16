@@ -682,15 +682,18 @@ def performValueIteration(offensivePositions, legalOffensiveActions, discountFac
   # if pacman, then do MDP
   # print("Do MDP")
 
-  # Q values and optimal policies
-  qValues = {state: 0 for state in offensivePositions}
-  optimalPolicies = {state: "Stop" for state in offensivePositions}
+  # optimal policy which stores action and q value as a tuple
+  optimalPolicies = {state: ("Stop", 0.0) for state in offensivePositions}
+
+  # Constants for indexes of the actions and q values
+  ACTION_INDEX = 0
+  Q_VALUE_INDEX = 1
 
   numIterations = 100
 
   # Value iteration
   for i in range(numIterations):
-    previousQValues = qValues.copy()
+    previousPolicies = optimalPolicies.copy()
 
     # print("Iteration:", i)
 
@@ -702,17 +705,11 @@ def performValueIteration(offensivePositions, legalOffensiveActions, discountFac
         childState = generateSuccessor(state, action) #Method that gets the child state when applying action to state
         # print("Child State:", childState)
         # calculateReward function, bellmans equation here. R(s) + gamma * next state utility
-        QDict[action] = calculateMDPReward(state, foodList, capsuleList) + discountFactor * previousQValues[childState]
-        # print(QDict)
+        QDict[action] = calculateMDPReward(state, foodList, capsuleList) + discountFactor * previousPolicies[childState][Q_VALUE_INDEX]
 
-      qValues[state] = max(QDict.values()) #Maximum of all QDict values
+      optimalPolicies[state] = (getActionOfMaxQValue(QDict), max(QDict.values()))
 
-      # optimalPolicies[state] = "Stop" #action of that maximum q value
-      optimalPolicies[state] = getActionOfMaxQValue(QDict)
-      # if i == 99:
-      #   print(QDict)
-
-  return optimalPolicies[currentPosition]
+  return optimalPolicies[currentPosition][ACTION_INDEX]
 
 # Method used to quickly get the key of the max q value in the q dictionary.
 def getActionOfMaxQValue(QDict):
