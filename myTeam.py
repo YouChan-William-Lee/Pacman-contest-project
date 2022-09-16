@@ -191,6 +191,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.entranceToReturnTo = None
     self.offensivePositions = getAllOffensivePositions(gameState.isOnRedTeam(self.index), gameState)
     self.legalOffensiveActions = getLegalOffensiveActions(gameState, gameState.isOnRedTeam(self.index))
+    self.discountFactor = 0.9 # Gamma/Discount factor for MDP time steps.
     
     CaptureAgent.registerInitialState(self, gameState)
   
@@ -241,14 +242,15 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
       # Value iteration
       for i in range(numIterations):
-        newQValues = qValues.copy()
+        previousQValues = qValues.copy()
 
         for state in self.offensivePositions:
           QDict = {}
 
           for action in self.legalOffensiveActions[state]:
-            nextState = 0 #Method that gets the next state when applying action to state
-            QDict[action] = 0 # calculateReward function, bellmans equation here
+            childState = generateSuccessor(state, action) #Method that gets the child state when applying action to state
+            # calculateReward function, bellmans equation here. R(s) + gamma * next state utility
+            QDict[action] = calculateMDPReward()  + self.discountFactor * previousQValues[childState]
 
         qValues[state] = 0 #Maximum of all QDict values
 
@@ -496,49 +498,6 @@ def aStarSearchToLocation(gameState, agentIndex, location, isScared=False, isOff
   # return []
   return "Stop"
 
-# Method that finds all entrances.
-# toAttack specificies if the entrances you should find are offensive entrances.
-# def findEntrances(teamIsRed, gameState, toAttack=False):
-  
-#   location = None
-
-#   walls = gameState.getWalls().asList()
-
-#   if (teamIsRed and not toAttack) or (not teamIsRed and toAttack):
-#     middleWidth = math.floor((gameState.data.layout.width / 2)) - 1
-
-#     entrances = []
-
-#     # Red team checks their end and the slot to the right which is the blue teams end.
-#     # If they are both empty, then it is an entrance.
-#     for i in range(gameState.data.layout.height - 1):
-#       currentPosition = (middleWidth, i)
-#       currentPositionToRight = (middleWidth + 1, i)
-      
-#       if currentPosition not in walls and currentPositionToRight not in walls:
-#         entrances.append(currentPosition)
-
-#     # # print("RED TEAM # printING ENTRANCES")
-#     # # print(entrances)
-    
-#   elif (not teamIsRed and not toAttack) or (teamIsRed and toAttack):
-#     middleWidth = math.ceil((gameState.data.layout.width / 2))
-
-#     entrances = []
-
-#     # Blue team checks their end and the slot to the left which is the red teams end.
-#     # If they are both empty, then it is an entrance.
-#     for i in range(gameState.data.layout.height - 1):
-#       currentPosition = (middleWidth, i)
-#       currentPositionToLeft = (middleWidth - 1, i)
-      
-#       if currentPosition not in walls and currentPositionToLeft not in walls:
-#         entrances.append(currentPosition)
-
-
-#   return entrances
-
-
 # Method to find all entrances. First finds them, then checks that they are valid.
 def findEntrances(teamIsRed, agentIndex, gameState):
   
@@ -706,3 +665,23 @@ def getLegalOffensiveActions(gameState, teamIsRed):
     allStateLegalActions[state] = legalActions
 
   return allStateLegalActions
+
+# MDP method to generate the successor of a game state and an action made.
+# Game state is the position, action is which direction it moves to.
+def generateSuccessor(gameState, action):
+  x = gameState[0]
+  y = gameState[1]
+  if action == Directions.NORTH:
+    return (x,y+1)
+  elif action == Directions.EAST:
+    return (x+1,y)
+  elif action == Directions.SOUTH:
+    return (x,y-1)
+  elif action == Directions.WEST:
+    return (x-1,y)
+  else:
+    return (x,y)
+
+# MDP function to calculate the reward.
+def calculateMDPReward():
+  return 0
