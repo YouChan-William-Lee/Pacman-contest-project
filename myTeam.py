@@ -764,7 +764,7 @@ currentDirection):
       reward += 5*offensiveFoodEaten
 
   if checkOppositeDirections(previousDirection, currentDirection):
-    reward -= 10
+    reward -= 25
 
   if beingChased:
     # If the ghost is being chased, give a lot of reward for returning home to store the food.
