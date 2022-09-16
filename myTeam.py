@@ -231,30 +231,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     # print(self.legalOffensiveActions)
 
     if currentAgentState.isPacman:
-      # if pacman, then do MDP
-      print("Do MDP")
-
-      # Q values and optimal policies
-      qValues = {state: 0 for state in self.offensivePositions}
-      optimalPolicies = {state: "action" for state in self.offensivePositions}
-
-      numIterations = 150
-
-      # Value iteration
-      for i in range(numIterations):
-        previousQValues = qValues.copy()
-
-        for state in self.offensivePositions:
-          QDict = {}
-
-          for action in self.legalOffensiveActions[state]:
-            childState = generateSuccessor(state, action) #Method that gets the child state when applying action to state
-            # calculateReward function, bellmans equation here. R(s) + gamma * next state utility
-            QDict[action] = calculateMDPReward()  + self.discountFactor * previousQValues[childState]
-
-        qValues[state] = 0 #Maximum of all QDict values
-
-        optimalPolicies[state] = 0 #action of that maximum q value
+      return performValueIteration(self.offensivePositions, self.legalOffensiveActions, self.discountFactor)
           
 
 
@@ -685,3 +662,30 @@ def generateSuccessor(gameState, action):
 # MDP function to calculate the reward.
 def calculateMDPReward():
   return 0
+
+# Method to perform the value iteration. Returns an action.
+def performValueIteration(offensivePositions, legalOffensiveActions, discountFactor):
+  # if pacman, then do MDP
+  print("Do MDP")
+
+  # Q values and optimal policies
+  qValues = {state: 0 for state in offensivePositions}
+  optimalPolicies = {state: "action" for state in offensivePositions}
+
+  numIterations = 150
+
+  # Value iteration
+  for i in range(numIterations):
+    previousQValues = qValues.copy()
+
+    for state in offensivePositions:
+      QDict = {}
+
+      for action in legalOffensiveActions[state]:
+        childState = generateSuccessor(state, action) #Method that gets the child state when applying action to state
+        # calculateReward function, bellmans equation here. R(s) + gamma * next state utility
+        QDict[action] = calculateMDPReward()  + discountFactor * previousQValues[childState]
+
+    qValues[state] = 0 #Maximum of all QDict values
+
+    optimalPolicies[state] = 0 #action of that maximum q value
