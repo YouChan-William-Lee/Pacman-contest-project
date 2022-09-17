@@ -29,7 +29,7 @@ import sys
 #################
 
 def createTeam(firstIndex, secondIndex, isRed,
-               first = 'OffensiveReflexAgent', second = 'OffensiveReflexAgent', numTraining = 0):
+               first = 'OffensiveReflexAgent', second = 'DefensiveReflexAgent', numTraining = 0):
   """
   This function should return a list of two agents that will form the
   team, initialized using firstIndex and secondIndex as their agent
@@ -749,8 +749,8 @@ def calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, being
 currentDirection):
   reward = 0
   if state in foodList:
-    reward += 1
-    # reward += len(foodList) / (offensiveFoodEaten + 1)
+    # reward += 1
+    reward += len(foodList) / (offensiveFoodEaten + 1)
   if state in capsuleList:
     # Very good to get capsule if being chased
     if beingChased:
