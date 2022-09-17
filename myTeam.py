@@ -792,6 +792,9 @@ currentDirection):
 def performValueIteration(offensivePositions, legalOffensiveActions, discountFactor,
 currentPosition, foodList, capsuleList, entrances, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState, currentDirection):
 
+  # Check how long it takes to perform value iteration
+  start = time.time()
+  
   # optimal policy which stores action and q value as a tuple
   optimalPolicies = {state: ("Stop", 0.0) for state in offensivePositions}
 
@@ -814,6 +817,10 @@ currentPosition, foodList, capsuleList, entrances, storeFood, beingChased, ghost
         QDict[action] = calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, beingChased,
         ghostAgents, offensiveFoodEaten, gameState, currentDirection, childState[1]) + discountFactor * previousPolicies[childState[0]][Q_VALUE_INDEX]
       optimalPolicies[state] = (getActionOfMaxQValue(QDict), max(QDict.values()))
+  
+  # Print how long it takes to perform value iteration
+  print 'Value Iteration time for offensive agent %d: %.4f' % (self.index, time.time() - start)
+
   return optimalPolicies[currentPosition][ACTION_INDEX]
 
 # Method used to quickly get the key of the max q value in the q dictionary.
