@@ -818,8 +818,11 @@ currentPosition, foodList, capsuleList, entrances, storeFood, beingChased, ghost
         ghostAgents, offensiveFoodEaten, gameState, currentDirection, childState[1]) + discountFactor * previousPolicies[childState[0]][Q_VALUE_INDEX]
       optimalPolicies[state] = (getActionOfMaxQValue(QDict), max(QDict.values()))
   
+  # Print how many enemy ghosts the offensive agent can see
+  print('Number of ghost: ', str(len(ghostAgents))) 
+
   # Print how long it takes to perform value iteration
-  print 'Value Iteration time for offensive agent %d: %.4f' % (self.index, time.time() - start)
+  print('Value Iteration time for phantomtroupe offensive mpd agent: ', str(time.time() - start))
 
   return optimalPolicies[currentPosition][ACTION_INDEX]
 
