@@ -811,8 +811,10 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
 
   # Try to split up teammates
   distanceToTeammate = util.manhattanDistance(state, teammatePosition)
-  if distanceToTeammate > 3:
-    reward += 15
+  # if distanceToTeammate > 3:
+  if distanceToTeammate > 2:
+    # reward += 15
+    reward += 5
 
   # totalFeatureCalculatingTime[2] += time.time() - foodAndCapsuleTime
 
@@ -833,7 +835,7 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
 
   # totalFeatureCalculatingTime[4] += time.time() - directionTime
 
-  # chasedTime = time.time()
+  chasedTime = time.time()
   if beingChased:
     # If the ghost is being chased, give a lot of reward for returning home to store the food.
     # scaredAndEntrancesTime = time.time()
@@ -864,7 +866,7 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
 
     # totalFeatureCalculatingTime[3] += time.time() - startWallsTime
 
-  # totalFeatureCalculatingTime[6] += time.time() - chasedTime
+  totalFeatureCalculatingTime[6] += time.time() - chasedTime
 
 
 
@@ -929,7 +931,7 @@ ghostPositions, wallsDict, teammatePosition):
   # print('Number of ghost: ', str(len(ghostAgents))) 
 
   # Print how long it takes to perform value iteration
-  # print('Value Iteration time for phantomtroupe offensive mpd agent: ', str(time.time() - start))
+  print('Value Iteration time for phantomtroupe offensive mpd agent: ', str(time.time() - start))
 
   # print('Total time to calculate rewards: ', totalRewardTime)
   # print('Total time to calculate ghosts reward: ', totalFeatureCalculatingTime[0])
@@ -938,7 +940,7 @@ ghostPositions, wallsDict, teammatePosition):
   # print('Total time to calculate walls reward: ', totalFeatureCalculatingTime[3])
   # print('Total time to calculate opposite directions reward: ', totalFeatureCalculatingTime[4])
   # print('Total time to calculate entrances when scared reward: ', totalFeatureCalculatingTime[5])
-  # print('Total time to calculate being scared reward: ', totalFeatureCalculatingTime[6])
+  print('Total time to calculate being scared reward: ', totalFeatureCalculatingTime[6])
 
   return optimalPolicies[currentPosition][ACTION_INDEX]
 
