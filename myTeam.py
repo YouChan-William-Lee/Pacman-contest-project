@@ -199,6 +199,9 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.offensiveFoodEaten = 0
     self.storeFood = False
     self.nextAttackingPoint = None
+    self.teamIndex = getTeamIndex(self.getTeam(gameState), self.index)
+    self.ownOffensiveEntrances = getOwnOffensiveEntrances(self.offensiveEntrances, self.teamIndex)
+    # print(self.ownOffensiveEntrances)
     
     CaptureAgent.registerInitialState(self, gameState)
   
@@ -247,7 +250,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
     if self.nextAttackingPoint == None:
       # Set a random attacking point
-      self.nextAttackingPoint = random.choice(self.offensiveEntrances)
+      self.nextAttackingPoint = random.choice(self.ownOffensiveEntrances)
 
     
     previousState = self.getPreviousObservation()
@@ -259,7 +262,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       previousAgentState = previousState.getAgentState(self.index)
       if previousAgentState.isPacman and not currentAgentState.isPacman:
         # If pacman returned back for any reason, set a new attacking point
-        self.nextAttackingPoint = random.choice(self.offensiveEntrances)
+        self.nextAttackingPoint = random.choice(self.ownOffensiveEntrances)
 
     beingChased = False
 
@@ -289,17 +292,18 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
               if teammate != self.index:
                 teammateIndex = teammate
             # Only chase pacman if the defender teammate is not closer to the enemy or it is very close to the enemy
-            if (util.manhattanDistance(gameState.getAgentPosition(teammateIndex), enemy.getPosition()) > 5) or (util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3):
+            if (util.manhattanDistance(gameState.getAgentPosition(teammateIndex), enemy.getPosition()) > util.manhattanDistance(currentPosition, enemy.getPosition())) or (util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3):
               action = aStarSearchToLocation(gameState, self.index, enemy.getPosition(), self.isScared)
-              print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
-              print("Chasing pacman")
+              # print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
+              # print("Chasing pacman")
               return action
           else:
             # If there is a defender very close to this entrance, choose antother entrance
             if util.manhattanDistance(enemy.getPosition(), currentPosition) <= 3 and currentPosition in self.entrancesDict and enemy.scaredTimer <= 1:
               # Choosing another entrance
-              print("Choose another entrance")
-              self.nextAttackingPoint = random.choice(self.offensiveEntrances)
+              # print("Choose another entrance")
+              self.nextAttackingPoint = random.choice(self.ownOffensiveEntrances)
+              
 
 
     # print("self.middle: ", self.middle)
@@ -323,7 +327,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       action = performValueIteration(self.offensivePositions,self.legalOffensiveActions,self.discountFactor,currentPosition,
       foodDict, capsuleDict, self.entrancesDict, self.storeFood, beingChased, ghostAgents, self.offensiveFoodEaten, gameState, currentDirection,
       ghostPositions, self.wallsDict, teammatePosition)
-      print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
+      # print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
       return action
     else:
       self.offensiveFoodEaten = 0
@@ -344,12 +348,12 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     #   else:
     #     action = 'West'
 
-    action = aStarSearchToLocation(gameState, self.index, self.nextAttackingPoint, self.isScared)
+    action = aStarSearchToLocation(gameState, self.index, self.nextAttackingPoint, self.isScared, True)
 
 
 
 
-    print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
+    # print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
     return action
 
 class DefensiveReflexAgent(ReflexCaptureAgent):
@@ -661,6 +665,15 @@ def findOffensiveEntrances(teamIsRed, gameState, entrances):
 
   return offensiveEntrances
 
+# Get the offensive entrances of this specific agent
+def getOwnOffensiveEntrances(offensiveEntrances, teamIndex):
+  topOffensiveEntrances = offensiveEntrances[:len(offensiveEntrances)//2]
+  bottomOffensiveEntrances = offensiveEntrances[len(offensiveEntrances)//2:]
+
+  if teamIndex == 0:
+    return topOffensiveEntrances
+  return bottomOffensiveEntrances
+
 # Find the middle of the map by finding all entrances and getting the middle entrance.
 # WARNING: This may mess up in cases where an entrance is unreachable
 def findMiddleOfMap(teamIsRed, agentIndex, gameState):
@@ -810,7 +823,7 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     #   reward += 100
     # elif offensiveFoodEaten > 0:
     #   reward += 5*offensiveFoodEaten
-    reward += 2*offensiveFoodEaten
+    reward += offensiveFoodEaten
 
   # totalFeatureCalculatingTime[1] += time.time() - entranceStart
 
@@ -908,15 +921,15 @@ ghostPositions, wallsDict, teammatePosition):
 
       # print("QDict after: ",QDict)
       
-      if len(QDict) == 0:
-        print("QDict is empty!")
+      # if len(QDict) == 0:
+      #  print("QDict is empty!")
       optimalPolicies[state] = (getActionOfMaxQValue(QDict), max(QDict.values()))
   
   # Print how many enemy ghosts the offensive agent can see
   # print('Number of ghost: ', str(len(ghostAgents))) 
 
   # Print how long it takes to perform value iteration
-  print('Value Iteration time for phantomtroupe offensive mpd agent: ', str(time.time() - start))
+  # print('Value Iteration time for phantomtroupe offensive mpd agent: ', str(time.time() - start))
 
   # print('Total time to calculate rewards: ', totalRewardTime)
   # print('Total time to calculate ghosts reward: ', totalFeatureCalculatingTime[0])
@@ -967,4 +980,17 @@ def checkSurroundingWalls(position, wallsDict):
   if numWalls >= 3:
     return True
   return False
+
+# This method returns the index of the agent in their team
+def getTeamIndex(team, index):
+  # Agent names are 1 - 4 whereas indexes are 0 - 3, so we add 1
+  index += 1
+  # print("agent index:", index)
+  # print("team: ", team)
+  if team[0] == index:
+    # print("Returning 0")
+    return 0
+  else:
+    # print("Returning 1")
+    return 1
 
