@@ -29,7 +29,7 @@ import sys
 #################
 
 def createTeam(firstIndex, secondIndex, isRed,
-               first = 'OffensiveReflexAgent', second = 'DefensiveReflexAgent', numTraining = 0):
+               first = 'OffensiveReflexAgent', second = 'OffensiveReflexAgent', numTraining = 0):
   """
   This function should return a list of two agents that will form the
   team, initialized using firstIndex and secondIndex as their agent
@@ -222,6 +222,14 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     currentPosition = gameState.getAgentPosition(self.index)
     currentAgentState = gameState.getAgentState(self.index)
 
+    team = self.getTeam(gameState)
+    # get index of teammate
+    teammateIndex = -1
+    for teammate in team:
+      if teammate != self.index:
+        teammateIndex = teammate
+    teammatePosition = gameState.getAgentPosition(teammateIndex)
+
     currentDirection = currentAgentState.getDirection()
 
     foodToEatList = self.getFood(gameState).asList()
@@ -281,14 +289,14 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
               if teammate != self.index:
                 teammateIndex = teammate
             # Only chase pacman if the defender teammate is not closer to the enemy or it is very close to the enemy
-            if (util.manhattanDistance(gameState.getAgentPosition(teammateIndex), enemy.getPosition()) > 5) or (util.manhattanDistance(gameState.getAgentPosition(self.index), enemy.getPosition()) <= 1):
+            if (util.manhattanDistance(gameState.getAgentPosition(teammateIndex), enemy.getPosition()) > 5) or (util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3):
               action = aStarSearchToLocation(gameState, self.index, enemy.getPosition(), self.isScared)
               print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
               print("Chasing pacman")
               return action
           else:
             # If there is a defender very close to this entrance, choose antother entrance
-            if util.manhattanDistance(enemy.getPosition(), currentPosition) <= 5 and currentPosition in self.entrancesDict and enemy.scaredTimer <= 1:
+            if util.manhattanDistance(enemy.getPosition(), currentPosition) <= 3 and currentPosition in self.entrancesDict and enemy.scaredTimer <= 1:
               # Choosing another entrance
               print("Choose another entrance")
               self.nextAttackingPoint = random.choice(self.offensiveEntrances)
@@ -314,7 +322,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         self.storeFood = True
       action = performValueIteration(self.offensivePositions,self.legalOffensiveActions,self.discountFactor,currentPosition,
       foodDict, capsuleDict, self.entrancesDict, self.storeFood, beingChased, ghostAgents, self.offensiveFoodEaten, gameState, currentDirection,
-      ghostPositions, self.wallsDict)
+      ghostPositions, self.wallsDict, teammatePosition)
       print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
       return action
     else:
@@ -774,7 +782,7 @@ def generateSuccessor(gameState, action, currentDirection):
 
 # MDP function to calculate the reward.
 def calculateMDPReward(state, foodDict, capsuleDict, entrancesDict, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState, previousDirection,
-currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict):
+currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teammatePosition):
   reward = 0
 
   # foodAndCapsuleTime = time.time()
@@ -786,30 +794,36 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict):
     # Very good to get capsule if being chased
     if beingChased:
       reward += 100
-    reward += 1
+    reward += 5
+
+  # Try to split up teammates
+  distanceToTeammate = util.manhattanDistance(state, teammatePosition)
+  if distanceToTeammate > 3:
+    reward += 15
 
   # totalFeatureCalculatingTime[2] += time.time() - foodAndCapsuleTime
 
   # entranceStart = time.time()
 
   if state in entrancesDict:
-    if storeFood:
-      reward += 100
-    elif offensiveFoodEaten > 0:
-      reward += 5*offensiveFoodEaten
+    # if storeFood:
+    #   reward += 100
+    # elif offensiveFoodEaten > 0:
+    #   reward += 5*offensiveFoodEaten
+    reward += 2*offensiveFoodEaten
 
   # totalFeatureCalculatingTime[1] += time.time() - entranceStart
 
   # directionTime = time.time()
-  if checkOppositeDirections(previousDirection, currentDirection):
-    reward -= 25
+  # if checkOppositeDirections(previousDirection, currentDirection):
+  #   reward -= 25
 
   # totalFeatureCalculatingTime[4] += time.time() - directionTime
 
   # chasedTime = time.time()
   if beingChased:
     # If the ghost is being chased, give a lot of reward for returning home to store the food.
-    scaredAndEntrancesTime = time.time()
+    # scaredAndEntrancesTime = time.time()
     if state in entrancesDict and offensiveFoodEaten > 0:
       reward += 100
     # totalFeatureCalculatingTime[5] += time.time() - scaredAndEntrancesTime
@@ -826,14 +840,14 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict):
       if ghostDistance == 0:
         return -sys.maxsize - 1
       else:
-        reward -= 1/ghostDistance
+        reward -= 20/ghostDistance
 
     # totalFeatureCalculatingTime[0] += time.time() - start
 
     # startWallsTime = time.time()
 
     if checkSurroundingWalls(state, wallsDict):
-      reward -= 50
+      reward -= 20
 
     # totalFeatureCalculatingTime[3] += time.time() - startWallsTime
 
@@ -846,10 +860,10 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict):
 # Method to perform the value iteration. Returns an action.
 def performValueIteration(offensivePositions, legalOffensiveActions, discountFactor,
 currentPosition, foodDict, capsuleDict, entrancesDict, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState, currentDirection,
-ghostPositions, wallsDict):
+ghostPositions, wallsDict, teammatePosition):
 
   # Check how long it takes to perform value iteration
-  # start = time.time()
+  start = time.time()
   
   # optimal policy which stores action and q value as a tuple
   optimalPolicies = {state: ("Stop", 0.0) for state in offensivePositions}
@@ -887,7 +901,8 @@ ghostPositions, wallsDict):
         # calculateReward function, bellmans equation here. R(s) + gamma * next state utility
         # startCalculatingReward = time.time()
         QDict[action] = calculateMDPReward(state, foodDict, capsuleDict, entrancesDict, storeFood, beingChased,
-        ghostAgents, offensiveFoodEaten, gameState, currentDirection, childState[1], totalFeatureCalculatingTime, ghostPositions, wallsDict) + discountFactor * previousPolicies[childState[0]][Q_VALUE_INDEX]
+        ghostAgents, offensiveFoodEaten, gameState, currentDirection, childState[1], totalFeatureCalculatingTime, ghostPositions,
+        wallsDict, teammatePosition) + discountFactor * previousPolicies[childState[0]][Q_VALUE_INDEX]
         # totalRewardTime += (time.time() - startCalculatingReward)
         # print("action set:", QDict[action])
 
@@ -901,7 +916,7 @@ ghostPositions, wallsDict):
   # print('Number of ghost: ', str(len(ghostAgents))) 
 
   # Print how long it takes to perform value iteration
-  # print('Value Iteration time for phantomtroupe offensive mpd agent: ', str(time.time() - start))
+  print('Value Iteration time for phantomtroupe offensive mpd agent: ', str(time.time() - start))
 
   # print('Total time to calculate rewards: ', totalRewardTime)
   # print('Total time to calculate ghosts reward: ', totalFeatureCalculatingTime[0])
