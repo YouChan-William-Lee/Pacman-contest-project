@@ -224,8 +224,6 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
     foodToEatList = self.getFood(gameState).asList()
 
-
-
     capsuleList = self.getCapsules(gameState)
 
     if self.nextAttackingPoint == None:
@@ -300,7 +298,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     if currentAgentState.isPacman:
       # Currently just checking if its eaten a certain number of food. Maybe we can come up with a formula
       # to let it decide on its own when to go back to store food.
-      if self.offensiveFoodEaten > 4:
+      if self.offensiveFoodEaten >= 6:
         self.storeFood = True
       action = performValueIteration(self.offensivePositions,self.legalOffensiveActions,self.discountFactor,currentPosition,
       foodToEatList,capsuleList, self.entrances, self.storeFood, beingChased, ghostAgents, self.offensiveFoodEaten, gameState, currentDirection)
@@ -804,6 +802,9 @@ currentPosition, foodList, capsuleList, entrances, storeFood, beingChased, ghost
 
   numIterations = 100
 
+  print("offensive positions length:", len(offensivePositions))
+  # print("actions length:", len(offensivePositions))
+
   # Value iteration
   for i in range(numIterations):
     previousPolicies = optimalPolicies.copy()
@@ -811,11 +812,24 @@ currentPosition, foodList, capsuleList, entrances, storeFood, beingChased, ghost
     for state in offensivePositions:
       QDict = {}
 
+      # print("QDict now: ",QDict)
+      # print("State now:", state)
+      # print("legal offensive actions for this state: ",legalOffensiveActions[state])
+
+      # If there are no legal offensive actions then just continue and dont bother with this state
+      if len(legalOffensiveActions[state]) == 0:
+        continue
       for action in legalOffensiveActions[state]:
         childState = generateSuccessor(state, action, currentDirection) #Method that gets the child state when applying action to state
         # calculateReward function, bellmans equation here. R(s) + gamma * next state utility
         QDict[action] = calculateMDPReward(state, foodList, capsuleList, entrances, storeFood, beingChased,
         ghostAgents, offensiveFoodEaten, gameState, currentDirection, childState[1]) + discountFactor * previousPolicies[childState[0]][Q_VALUE_INDEX]
+        # print("action set:", QDict[action])
+
+      # print("QDict after: ",QDict)
+      
+      if len(QDict) == 0:
+        print("QDict is empty!")
       optimalPolicies[state] = (getActionOfMaxQValue(QDict), max(QDict.values()))
   
   # Print how many enemy ghosts the offensive agent can see
