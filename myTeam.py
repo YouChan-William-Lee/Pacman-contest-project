@@ -855,7 +855,8 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
       if ghostDistance == 0:
         return -sys.maxsize - 1
       else:
-        reward -= 20/ghostDistance
+        # reward -= 20/ghostDistance
+        reward -= 30/ghostDistance
 
     # totalFeatureCalculatingTime[0] += time.time() - start
 
