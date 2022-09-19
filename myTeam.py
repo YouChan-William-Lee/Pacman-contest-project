@@ -811,20 +811,21 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
   # foodAndCapsuleTime = time.time()
   
   if state in foodDict:
-    # reward += 1
-    reward += len(foodDict) / (offensiveFoodEaten + 1)
+    # reward += 5
+    # reward += len(foodDict) / (offensiveFoodEaten + 1)
+    reward += len(foodDict) + offensiveFoodEaten
+    # reward += len(foodDict) + offensiveFoodEaten
   if state in capsuleDict:
     # Very good to get capsule if being chased
     if beingChased:
       reward += 100
-    reward += 5
+    reward += 15
 
   # Try to split up teammates
   distanceToTeammate = util.manhattanDistance(state, teammatePosition)
-  if distanceToTeammate > 3:
-  # if distanceToTeammate > 2:
-    # reward += 15
-    reward += 5
+  # if distanceToTeammate > 3:
+  if distanceToTeammate <= 1:
+    reward -= 2
 
   # totalFeatureCalculatingTime[2] += time.time() - foodAndCapsuleTime
 
@@ -835,7 +836,7 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     #   reward += 100
     # elif offensiveFoodEaten > 0:
     #   reward += 5*offensiveFoodEaten
-    reward += offensiveFoodEaten
+    reward += 5*offensiveFoodEaten + 1
     # If there is only 2 food left, go back as soon as possible.
     if len(foodDict) <= 2:
       reward += 1000
@@ -885,7 +886,7 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     #   reward -= 20
 
     if numWallsDict[state] >= 3:
-      reward -= 15
+      reward -= 10
 
     # totalFeatureCalculatingTime[3] += time.time() - startWallsTime
 
@@ -1035,10 +1036,10 @@ def ghostDistancesRewardDict(possibleOffensivePositions, ghostPositions):
   for position in possibleOffensivePositions:
     for ghostPosition in ghostPositions:
       distance = util.manhattanDistance(position, ghostPosition)
-      if distance == 0:
+      if distance <= 1:
         ghostDistanceRewardDict[position] = sys.maxsize
       else:
-        ghostDistanceRewardDict[position] += 30/distance
+        ghostDistanceRewardDict[position] += 50/distance
 
   return ghostDistanceRewardDict
 
