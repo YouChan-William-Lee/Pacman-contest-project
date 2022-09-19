@@ -811,10 +811,10 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
 
   # Try to split up teammates
   distanceToTeammate = util.manhattanDistance(state, teammatePosition)
-  # if distanceToTeammate > 3:
-  if distanceToTeammate > 2:
-    # reward += 15
-    reward += 5
+  if distanceToTeammate > 3:
+  # if distanceToTeammate > 2:
+    reward += 15
+    # reward += 5
 
   # totalFeatureCalculatingTime[2] += time.time() - foodAndCapsuleTime
 
@@ -855,8 +855,8 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
       if ghostDistance == 0:
         return -sys.maxsize - 1
       else:
-        # reward -= 20/ghostDistance
-        reward -= 30/ghostDistance
+        reward -= 20/ghostDistance
+        # reward -= 30/ghostDistance
 
     # totalFeatureCalculatingTime[0] += time.time() - start
 
