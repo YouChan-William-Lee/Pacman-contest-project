@@ -884,7 +884,7 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     # if checkSurroundingWalls(state, wallsDict):
     #   reward -= 20
 
-    if numWallsDict[state] > 3:
+    if numWallsDict[state] >= 3:
       reward -= 15
 
     # totalFeatureCalculatingTime[3] += time.time() - startWallsTime
