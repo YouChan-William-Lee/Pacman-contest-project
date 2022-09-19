@@ -273,6 +273,11 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     closestInvader = None
     ghostPositions = []
 
+    # If scared, just play offense
+    if currentAgentState.scaredTimer > 0:
+      action = aStarSearchToLocation(gameState, self.index, self.nextAttackingPoint, False, True)
+      return action
+
     for agent in self.getOpponents(gameState):
       enemy = gameState.getAgentState(agent)
       if enemy.getPosition() != None:
@@ -294,7 +299,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
               if teammate != self.index:
                 teammateIndex = teammate
             # Only chase pacman if the defender teammate is not closer to the enemy or it is very close to the enemy
-            if (util.manhattanDistance(gameState.getAgentPosition(teammateIndex), enemy.getPosition()) > util.manhattanDistance(currentPosition, enemy.getPosition())) or (util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3):
+            # if (util.manhattanDistance(gameState.getAgentPosition(teammateIndex), enemy.getPosition()) > util.manhattanDistance(currentPosition, enemy.getPosition())) or (util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3):
+            if (util.manhattanDistance(gameState.getAgentPosition(teammateIndex), enemy.getPosition()) > util.manhattanDistance(currentPosition, enemy.getPosition())):
               action = aStarSearchToLocation(gameState, self.index, enemy.getPosition(), self.isScared)
               # print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
               # print("Chasing pacman")
@@ -815,8 +821,8 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
   distanceToTeammate = util.manhattanDistance(state, teammatePosition)
   if distanceToTeammate > 3:
   # if distanceToTeammate > 2:
-    reward += 15
-    # reward += 5
+    # reward += 15
+    reward += 5
 
   # totalFeatureCalculatingTime[2] += time.time() - foodAndCapsuleTime
 
@@ -828,6 +834,9 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     # elif offensiveFoodEaten > 0:
     #   reward += 5*offensiveFoodEaten
     reward += offensiveFoodEaten
+    # If there is only 2 food left, go back as soon as possible.
+    if len(foodDict) <= 2:
+      reward += 1000
 
   # totalFeatureCalculatingTime[1] += time.time() - entranceStart
 
