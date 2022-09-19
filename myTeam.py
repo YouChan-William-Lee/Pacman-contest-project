@@ -853,9 +853,9 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
 
       ghostDistance = util.manhattanDistance(state, ghostPosition)
       if ghostDistance == 0:
-        return -sys.maxsize - 1
+        reward -= 25
       else:
-        reward -= 20/ghostDistance
+        reward -= 25/ghostDistance
         # reward -= 30/ghostDistance
 
     # totalFeatureCalculatingTime[0] += time.time() - start
@@ -929,7 +929,7 @@ ghostPositions, wallsDict, teammatePosition):
       optimalPolicies[state] = (getActionOfMaxQValue(QDict), max(QDict.values()))
   
   # Print how many enemy ghosts the offensive agent can see
-  # print('Number of ghost: ', str(len(ghostAgents))) 
+  print('Number of ghost: ', str(len(ghostAgents))) 
 
   # Print how long it takes to perform value iteration
   print('Value Iteration time for phantomtroupe offensive mpd agent: ', str(time.time() - start))
