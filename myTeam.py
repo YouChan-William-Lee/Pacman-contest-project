@@ -332,9 +332,11 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       # to let it decide on its own when to go back to store food.
       if self.offensiveFoodEaten >= 6:
         self.storeFood = True
+
+      ghostDistanceRewardDict = ghostDistancesRewardDict(self.offensivePositions, ghostPositions)
       action = performValueIteration(self.offensivePositions,self.legalOffensiveActions,self.discountFactor,currentPosition,
       foodDict, capsuleDict, self.entrancesDict, self.storeFood, beingChased, ghostAgents, self.offensiveFoodEaten, gameState, currentDirection,
-      ghostPositions, self.wallsDict, teammatePosition, self.numWallsDict)
+      ghostPositions, self.wallsDict, teammatePosition, self.numWallsDict, ghostDistanceRewardDict)
       # print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
       return action
     else:
@@ -803,7 +805,7 @@ def generateSuccessor(gameState, action, currentDirection):
 
 # MDP function to calculate the reward.
 def calculateMDPReward(state, foodDict, capsuleDict, entrancesDict, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState, previousDirection,
-currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teammatePosition, numWallsDict):
+currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDict):
   reward = 0
 
   # foodAndCapsuleTime = time.time()
@@ -857,18 +859,23 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
 
     # start = time.time()
     
-    for ghostPosition in ghostPositions:
-      # if ghostPosition == state:
-      #   return -sys.maxsize - 1
-      # else:
-      #   reward -= 1
+    # for ghostPosition in ghostPositions:
+    #   # if ghostPosition == state:
+    #   #   return -sys.maxsize - 1
+    #   # else:
+    #   #   reward -= 1
 
-      ghostDistance = util.manhattanDistance(state, ghostPosition)
-      if ghostDistance == 0:
-        return -sys.maxsize - 1
-      else:
-        reward -= 30/ghostDistance
+    #   ghostDistance = util.manhattanDistance(state, ghostPosition)
+    #   if ghostDistance == 0:
+    #     return -sys.maxsize - 1
+    #   else:
+    #     reward -= 30/ghostDistance
         # reward -= 30/ghostDistance
+
+    # To save time, calculating reward of ghost distance reward dict in SEPARATE function called
+    # ghostDistancesRewardDict and simple grabbing the reward to subtract from this state.
+    # To edit the ghost reward, PLEASE LOOK AT THIS FUNCTION!
+    reward -= ghostDistanceRewardDict[state]
 
     # totalFeatureCalculatingTime[0] += time.time() - start
 
@@ -891,7 +898,7 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
 # Method to perform the value iteration. Returns an action.
 def performValueIteration(offensivePositions, legalOffensiveActions, discountFactor,
 currentPosition, foodDict, capsuleDict, entrancesDict, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState, currentDirection,
-ghostPositions, wallsDict, teammatePosition, numWallsDict):
+ghostPositions, wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDict):
 
   # Check how long it takes to perform value iteration
   start = time.time()
@@ -933,7 +940,7 @@ ghostPositions, wallsDict, teammatePosition, numWallsDict):
         # startCalculatingReward = time.time()
         QDict[action] = calculateMDPReward(state, foodDict, capsuleDict, entrancesDict, storeFood, beingChased,
         ghostAgents, offensiveFoodEaten, gameState, currentDirection, childState[1], totalFeatureCalculatingTime, ghostPositions,
-        wallsDict, teammatePosition, numWallsDict) + discountFactor * previousPolicies[childState[0]][Q_VALUE_INDEX]
+        wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDict) + discountFactor * previousPolicies[childState[0]][Q_VALUE_INDEX]
         # totalRewardTime += (time.time() - startCalculatingReward)
         # print("action set:", QDict[action])
 
@@ -1021,4 +1028,18 @@ def getTeamIndex(team, index):
   else:
     # print("Returning 1")
     return 1
+
+# Method that returns ghost distances reward dictionary given a position and all the ghost positions
+def ghostDistancesRewardDict(possibleOffensivePositions, ghostPositions):
+  ghostDistanceRewardDict = {position: 0 for position in possibleOffensivePositions}
+  for position in possibleOffensivePositions:
+    for ghostPosition in ghostPositions:
+      distance = util.manhattanDistance(position, ghostPosition)
+      if distance == 0:
+        ghostDistanceRewardDict[position] = sys.maxsize
+      else:
+        ghostDistanceRewardDict[position] += 30/distance
+
+  return ghostDistanceRewardDict
+
 
