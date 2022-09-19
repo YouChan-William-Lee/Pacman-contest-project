@@ -29,7 +29,7 @@ import sys
 #################
 
 def createTeam(firstIndex, secondIndex, isRed,
-               first = 'OffensiveReflexAgent', second = 'OffensiveReflexAgent', numTraining = 0):
+               first = 'OffensiveReflexAgent', second = 'DefensiveReflexAgent', numTraining = 0):
   """
   This function should return a list of two agents that will form the
   team, initialized using firstIndex and secondIndex as their agent
@@ -199,8 +199,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.offensiveFoodEaten = 0
     self.storeFood = False
     self.nextAttackingPoint = None
-    self.teamIndex = getTeamIndex(self.getTeam(gameState), self.index)
-    self.ownOffensiveEntrances = getOwnOffensiveEntrances(self.offensiveEntrances, self.teamIndex)
+    # self.teamIndex = getTeamIndex(self.getTeam(gameState), self.index)
+    # self.ownOffensiveEntrances = getOwnOffensiveEntrances(self.offensiveEntrances, self.teamIndex)
     # print(self.ownOffensiveEntrances)
     
     CaptureAgent.registerInitialState(self, gameState)
@@ -250,7 +250,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
     if self.nextAttackingPoint == None:
       # Set a random attacking point
-      self.nextAttackingPoint = random.choice(self.ownOffensiveEntrances)
+      self.nextAttackingPoint = random.choice(self.offensiveEntrances)
 
     
     previousState = self.getPreviousObservation()
@@ -262,7 +262,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       previousAgentState = previousState.getAgentState(self.index)
       if previousAgentState.isPacman and not currentAgentState.isPacman:
         # If pacman returned back for any reason, set a new attacking point
-        self.nextAttackingPoint = random.choice(self.ownOffensiveEntrances)
+        self.nextAttackingPoint = random.choice(self.offensiveEntrances)
 
     beingChased = False
 
@@ -302,7 +302,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             if util.manhattanDistance(enemy.getPosition(), currentPosition) <= 3 and currentPosition in self.entrancesDict and enemy.scaredTimer <= 1:
               # Choosing another entrance
               # print("Choose another entrance")
-              self.nextAttackingPoint = random.choice(self.ownOffensiveEntrances)
+              self.nextAttackingPoint = random.choice(self.offensiveEntrances)
               
 
 
@@ -929,7 +929,7 @@ ghostPositions, wallsDict):
       optimalPolicies[state] = (getActionOfMaxQValue(QDict), max(QDict.values()))
   
   # Print how many enemy ghosts the offensive agent can see
-  # print('Number of ghost: ', str(len(ghostAgents))) 
+  print('Number of ghost: ', str(len(ghostAgents))) 
 
   # Print how long it takes to perform value iteration
   print('Value Iteration time for phantomtroupe offensive mpd agent: ', str(time.time() - start))
