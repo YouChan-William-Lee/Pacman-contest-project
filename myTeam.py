@@ -859,15 +859,6 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
 
   # totalFeatureCalculatingTime[4] += time.time() - directionTime
 
-  # To save time, calculating reward of ghost distance reward dict in SEPARATE function called
-  # ghostDistancesRewardDict and simple grabbing the reward to subtract from this state.
-  # To edit the ghost reward, PLEASE LOOK AT THIS FUNCTION!
-  ghostReward = ghostDistanceRewardDict[state]
-  
-  # Even if not being chased, if you can see the ghost, be wary of
-  if not beingChased:
-    reward += 1/(ghostDistanceRewardDict[state]+1)
-
   # chasedTime = time.time()
   if beingChased:
     # If the ghost is being chased, give a lot of reward for returning home to store the food.
@@ -893,17 +884,18 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     #     reward -= 30/ghostDistance
         # reward -= 30/ghostDistance
 
-    # Look at ghostReward definition above
+    # To save time, calculating reward of ghost distance reward dict in SEPARATE function called
+    # ghostDistancesRewardDict and simple grabbing the reward to subtract from this state.
+    # To edit the ghost reward, PLEASE LOOK AT THIS FUNCTION!
+    ghostReward = ghostDistanceRewardDict[state]
     reward -= ghostReward
 
     
     # If the entrance reward is greater than the ghost reward while being chased, increase ghostReward
-    if entranceReward > ghostReward:
+    if entranceReward > ghostReward*2:
       # print("ghostReward: ",ghostReward)
       # print("entranceReward: ",entranceReward)
-      reward -= ghostReward
-
-    reward -= ghostReward * 1/(offensiveFoodEaten+1)
+      reward -= ghostReward/2
 
     # totalFeatureCalculatingTime[0] += time.time() - start
 
@@ -1069,5 +1061,4 @@ def ghostDistancesRewardDict(possibleOffensivePositions, ghostPositions):
         ghostDistanceRewardDict[position] += 50/distance
 
   return ghostDistanceRewardDict
-
 
