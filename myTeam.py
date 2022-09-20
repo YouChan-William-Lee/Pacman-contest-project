@@ -202,7 +202,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.teamIndex = getTeamIndex(self.getTeam(gameState), self.index)
     self.ownOffensiveEntrances = getOwnOffensiveEntrances(self.offensiveEntrances, self.teamIndex)
     self.numWallsDict = makeNumWallsDict(self.offensivePositions, self.wallsDict)
-    print("Greedy double offensive mdp agent V 0")
+    print("Greedy double offensive mdp agent V 2")
     # print(self.numWallsDict)
     # print(self.ownOffensiveEntrances)
     
@@ -874,7 +874,7 @@ ghostPositions, wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDi
   ACTION_INDEX = 0
   Q_VALUE_INDEX = 1
 
-  numIterations = 100
+  numIterations = 120
 
   # print("offensive positions length:", len(offensivePositions))
   # print("actions length:", len(offensivePositions))
