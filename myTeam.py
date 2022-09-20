@@ -202,9 +202,10 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.teamIndex = getTeamIndex(self.getTeam(gameState), self.index)
     self.ownOffensiveEntrances = getOwnOffensiveEntrances(self.offensiveEntrances, self.teamIndex)
     self.numWallsDict = makeNumWallsDict(self.offensivePositions, self.wallsDict)
-    print("Greedy agent 2!")
     # print(self.numWallsDict)
     # print(self.ownOffensiveEntrances)
+
+    print("Greedy agent v1 numiterations 120")
     
     CaptureAgent.registerInitialState(self, gameState)
   
@@ -286,8 +287,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
           if enemy.scaredTimer <= 1:
             if util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3:
               beingChased = True
-            ghostAgents.append(enemy)
-            ghostPositions.append(enemy.getPosition())
+              ghostAgents.append(enemy)
+              ghostPositions.append(enemy.getPosition())
             # ghostDistances.append(self.distancer.getDistance(currentPosition, enemy.getPosition()))
 
         # If currently the agent is on defense and it sees a pacman, chase
@@ -814,10 +815,7 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
   if state in foodDict:
     # reward += 5
     # reward += len(foodDict) / (offensiveFoodEaten + 1)
-    if beingChased:
-      reward += len(foodDict)
-    else:
-      reward += len(foodDict) / (offensiveFoodEaten + 1)
+    reward += len(foodDict) + offensiveFoodEaten
     # reward += len(foodDict) + offensiveFoodEaten
   if state in capsuleDict:
     # Very good to get capsule if being chased
@@ -840,7 +838,7 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     #   reward += 100
     # elif offensiveFoodEaten > 0:
     #   reward += 5*offensiveFoodEaten
-    reward += 5*offensiveFoodEaten + 5
+    reward += 5*offensiveFoodEaten + 1
     # If there is only 2 food left, go back as soon as possible.
     if len(foodDict) <= 2:
       reward += 1000
