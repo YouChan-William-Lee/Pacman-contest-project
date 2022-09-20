@@ -282,14 +282,11 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       enemy = gameState.getAgentState(agent)
       if enemy.getPosition() != None:
         if currentAgentState.isPacman:
-          if enemy.scaredTimer <= 5:
+          if enemy.scaredTimer <= 1:
             if util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3:
               beingChased = True
-              ghostAgents.append(enemy)
-              ghostPositions.append(enemy.getPosition())
-            else:
-              ghostAgents.append(enemy)
-              ghostPositions.append(enemy.getPosition())
+            ghostAgents.append(enemy)
+            ghostPositions.append(enemy.getPosition())
             # ghostDistances.append(self.distancer.getDistance(currentPosition, enemy.getPosition()))
 
         # If currently the agent is on defense and it sees a pacman, chase
@@ -815,17 +812,17 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
   
   if state in foodDict:
     # reward += 5
-    if not beingChased:
-      reward += len(foodDict) * 2
+    # reward += len(foodDict) / (offensiveFoodEaten + 1)
+    if beingChased:
+      reward += len(foodDict)
     else:
-      # reward += len(foodDict)
       reward += len(foodDict) / (offensiveFoodEaten + 1)
     # reward += len(foodDict) + offensiveFoodEaten
   if state in capsuleDict:
     # Very good to get capsule if being chased
     if beingChased:
       reward += 100
-    reward += 10
+    reward += 15
 
   # Try to split up teammates
   distanceToTeammate = util.manhattanDistance(state, teammatePosition)
@@ -837,16 +834,12 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
 
   # entranceStart = time.time()
 
-  entranceReward = 0
-
   if state in entrancesDict:
     # if storeFood:
     #   reward += 100
     # elif offensiveFoodEaten > 0:
     #   reward += 5*offensiveFoodEaten
-    # reward += 10
-    entranceReward += offensiveFoodEaten
-    reward += entranceReward
+    reward += 5*offensiveFoodEaten + 5
     # If there is only 2 food left, go back as soon as possible.
     if len(foodDict) <= 2:
       reward += 1000
@@ -865,8 +858,7 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     # scaredAndEntrancesTime = time.time()
     # if state in entrancesDict and offensiveFoodEaten > 0:
     if state in entrancesDict:
-      entranceReward += 10 + offensiveFoodEaten
-      reward += entranceReward
+      reward += 10*offensiveFoodEaten
     # totalFeatureCalculatingTime[5] += time.time() - scaredAndEntrancesTime
 
     # start = time.time()
@@ -887,15 +879,7 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     # To save time, calculating reward of ghost distance reward dict in SEPARATE function called
     # ghostDistancesRewardDict and simple grabbing the reward to subtract from this state.
     # To edit the ghost reward, PLEASE LOOK AT THIS FUNCTION!
-    ghostReward = ghostDistanceRewardDict[state]
-    reward -= ghostReward
-
-    
-    # If the entrance reward is greater than the ghost reward while being chased, increase ghostReward
-    if entranceReward > ghostReward*2:
-      # print("ghostReward: ",ghostReward)
-      # print("entranceReward: ",entranceReward)
-      reward -= ghostReward/2
+    reward -= ghostDistanceRewardDict[state]
 
     # totalFeatureCalculatingTime[0] += time.time() - start
 
@@ -905,7 +889,7 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     #   reward -= 20
 
     if numWallsDict[state] >= 3:
-      reward -= 20
+      reward -= 10
 
     # totalFeatureCalculatingTime[3] += time.time() - startWallsTime
 
@@ -1055,7 +1039,7 @@ def ghostDistancesRewardDict(possibleOffensivePositions, ghostPositions):
   for position in possibleOffensivePositions:
     for ghostPosition in ghostPositions:
       distance = util.manhattanDistance(position, ghostPosition)
-      if distance == 0:
+      if distance <= 1:
         ghostDistanceRewardDict[position] = sys.maxsize
       else:
         ghostDistanceRewardDict[position] += 50/distance
