@@ -282,9 +282,10 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       enemy = gameState.getAgentState(agent)
       if enemy.getPosition() != None:
         if currentAgentState.isPacman:
-          if enemy.scaredTimer <= 1:
+          if enemy.scaredTimer <= 5:
             if util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3:
               beingChased = True
+            else:
               ghostAgents.append(enemy)
               ghostPositions.append(enemy.getPosition())
             # ghostDistances.append(self.distancer.getDistance(currentPosition, enemy.getPosition()))
@@ -834,13 +835,16 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
 
   # entranceStart = time.time()
 
+  entranceReward = 0
+
   if state in entrancesDict:
     # if storeFood:
     #   reward += 100
     # elif offensiveFoodEaten > 0:
     #   reward += 5*offensiveFoodEaten
     # reward += 10
-    reward += offensiveFoodEaten
+    entranceReward += offensiveFoodEaten
+    reward += entranceReward
     # If there is only 2 food left, go back as soon as possible.
     if len(foodDict) <= 2:
       reward += 1000
@@ -859,7 +863,8 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     # scaredAndEntrancesTime = time.time()
     # if state in entrancesDict and offensiveFoodEaten > 0:
     if state in entrancesDict:
-      reward += 10 + offensiveFoodEaten
+      entranceReward += 10 + offensiveFoodEaten
+      reward += entranceReward
     # totalFeatureCalculatingTime[5] += time.time() - scaredAndEntrancesTime
 
     # start = time.time()
@@ -880,7 +885,15 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     # To save time, calculating reward of ghost distance reward dict in SEPARATE function called
     # ghostDistancesRewardDict and simple grabbing the reward to subtract from this state.
     # To edit the ghost reward, PLEASE LOOK AT THIS FUNCTION!
-    reward -= ghostDistanceRewardDict[state]
+    ghostReward = ghostDistanceRewardDict[state]
+    reward -= ghostReward
+
+    
+    # If the entrance reward is greater than the ghost reward while being chased, increase ghostReward
+    if entranceReward > ghostReward*2:
+      # print("ghostReward: ",ghostReward)
+      # print("entranceReward: ",entranceReward)
+      reward -= ghostReward
 
     # totalFeatureCalculatingTime[0] += time.time() - start
 
@@ -1043,7 +1056,7 @@ def ghostDistancesRewardDict(possibleOffensivePositions, ghostPositions):
       if distance == 0:
         ghostDistanceRewardDict[position] = sys.maxsize
       else:
-        ghostDistanceRewardDict[position] += 20/distance
+        ghostDistanceRewardDict[position] += 50/distance
 
   return ghostDistanceRewardDict
 
