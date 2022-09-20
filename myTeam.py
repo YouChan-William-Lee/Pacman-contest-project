@@ -275,7 +275,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     ghostPositions = []
 
     # If scared, just play offense
-    if currentAgentState.scaredTimer > 0:
+    if currentAgentState.scaredTimer > 0 and not currentAgentState.isPacman:
       action = aStarSearchToLocation(gameState, self.index, self.nextAttackingPoint, False, True)
       return action
 
@@ -334,12 +334,19 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       if self.offensiveFoodEaten >= 6:
         self.storeFood = True
 
+      if self.index == 0:
+        print("is pacman")
+
       ghostDistanceRewardDict = ghostDistancesRewardDict(self.offensivePositions, ghostPositions)
+      if self.index == 0:
+        print("Performing value iterations for red agent")
       action = performValueIteration(self.offensivePositions,self.legalOffensiveActions,self.discountFactor,currentPosition,
       foodDict, capsuleDict, self.entrancesDict, self.storeFood, beingChased, ghostAgents, self.offensiveFoodEaten, gameState, currentDirection,
       ghostPositions, self.wallsDict, teammatePosition, self.numWallsDict, ghostDistanceRewardDict)
       # print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
-      return action
+      if self.index == 0:
+        print("Policy for red agent: ", action)
+      return action[0]
     else:
       self.offensiveFoodEaten = 0
       self.storeFood = False
@@ -815,7 +822,6 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     # reward += 5
     # reward += len(foodDict) / (offensiveFoodEaten + 1)
     reward += len(foodDict) + offensiveFoodEaten
-    # reward += len(foodDict) + offensiveFoodEaten
   if state in capsuleDict:
     # Very good to get capsule if being chased
     if beingChased:
@@ -828,70 +834,26 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
   if distanceToTeammate <= 1:
     reward -= 2
 
-  # totalFeatureCalculatingTime[2] += time.time() - foodAndCapsuleTime
-
-  # entranceStart = time.time()
-
   if state in entrancesDict:
-    # if storeFood:
-    #   reward += 100
-    # elif offensiveFoodEaten > 0:
-    #   reward += 5*offensiveFoodEaten
     reward += 5*offensiveFoodEaten + 1
     # If there is only 2 food left, go back as soon as possible.
     if len(foodDict) <= 2:
       reward += 1000
 
-  # totalFeatureCalculatingTime[1] += time.time() - entranceStart
 
-  # directionTime = time.time()
-  # if checkOppositeDirections(previousDirection, currentDirection):
-  #   reward -= 25
-
-  # totalFeatureCalculatingTime[4] += time.time() - directionTime
-
-  # chasedTime = time.time()
   if beingChased:
     # If the ghost is being chased, give a lot of reward for returning home to store the food.
-    # scaredAndEntrancesTime = time.time()
-    # if state in entrancesDict and offensiveFoodEaten > 0:
+
     if state in entrancesDict:
       reward += 10*offensiveFoodEaten
-    # totalFeatureCalculatingTime[5] += time.time() - scaredAndEntrancesTime
-
-    # start = time.time()
-    
-    # for ghostPosition in ghostPositions:
-    #   # if ghostPosition == state:
-    #   #   return -sys.maxsize - 1
-    #   # else:
-    #   #   reward -= 1
-
-    #   ghostDistance = util.manhattanDistance(state, ghostPosition)
-    #   if ghostDistance == 0:
-    #     return -sys.maxsize - 1
-    #   else:
-    #     reward -= 30/ghostDistance
-        # reward -= 30/ghostDistance
 
     # To save time, calculating reward of ghost distance reward dict in SEPARATE function called
     # ghostDistancesRewardDict and simple grabbing the reward to subtract from this state.
     # To edit the ghost reward, PLEASE LOOK AT THIS FUNCTION!
     reward -= ghostDistanceRewardDict[state]
 
-    # totalFeatureCalculatingTime[0] += time.time() - start
-
-    # startWallsTime = time.time()
-
-    # if checkSurroundingWalls(state, wallsDict):
-    #   reward -= 20
-
     if numWallsDict[state] >= 3:
       reward -= 10
-
-    # totalFeatureCalculatingTime[3] += time.time() - startWallsTime
-
-  # totalFeatureCalculatingTime[6] += time.time() - chasedTime
 
 
 
@@ -953,10 +915,10 @@ ghostPositions, wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDi
       optimalPolicies[state] = (getActionOfMaxQValue(QDict), max(QDict.values()))
   
   # Print how many enemy ghosts the offensive agent can see
-  print('Number of ghost: ', str(len(ghostAgents))) 
+  # print('Number of ghost: ', str(len(ghostAgents))) 
 
   # Print how long it takes to perform value iteration
-  print('Value Iteration time for phantomtroupe offensive mpd agent: ', str(time.time() - start))
+  # print('Value Iteration time for phantomtroupe offensive mpd agent: ', str(time.time() - start))
 
   # print('Total time to calculate rewards: ', totalRewardTime)
   # print('Total time to calculate ghosts reward: ', totalFeatureCalculatingTime[0])
@@ -967,7 +929,9 @@ ghostPositions, wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDi
   # print('Total time to calculate entrances when scared reward: ', totalFeatureCalculatingTime[5])
   # print('Total time to calculate being scared reward: ', totalFeatureCalculatingTime[6])
 
-  return optimalPolicies[currentPosition][ACTION_INDEX]
+  # return optimalPolicies[currentPosition][ACTION_INDEX]
+  # return whole optimal policy for testing
+  return optimalPolicies[currentPosition]
 
 # Method used to quickly get the key of the max q value in the q dictionary.
 def getActionOfMaxQValue(QDict):
