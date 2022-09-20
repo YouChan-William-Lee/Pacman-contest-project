@@ -812,8 +812,10 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
   
   if state in foodDict:
     # reward += 5
-    reward += len(foodDict) / (offensiveFoodEaten + 1)
-    # reward += len(foodDict) + offensiveFoodEaten
+    if not beingChased:
+      reward += len(foodDict) + offensiveFoodEaten
+    else:
+      reward += len(foodDict) / (offensiveFoodEaten + 1)
     # reward += len(foodDict) + offensiveFoodEaten
   if state in capsuleDict:
     # Very good to get capsule if being chased
