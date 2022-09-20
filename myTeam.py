@@ -285,6 +285,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
           if enemy.scaredTimer <= 5:
             if util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3:
               beingChased = True
+              ghostAgents.append(enemy)
+              ghostPositions.append(enemy.getPosition())
             else:
               ghostAgents.append(enemy)
               ghostPositions.append(enemy.getPosition())
