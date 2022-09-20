@@ -202,6 +202,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.teamIndex = getTeamIndex(self.getTeam(gameState), self.index)
     self.ownOffensiveEntrances = getOwnOffensiveEntrances(self.offensiveEntrances, self.teamIndex)
     self.numWallsDict = makeNumWallsDict(self.offensivePositions, self.wallsDict)
+    print("Greedy agent 2!")
     # print(self.numWallsDict)
     # print(self.ownOffensiveEntrances)
     
