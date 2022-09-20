@@ -812,8 +812,8 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
   
   if state in foodDict:
     # reward += 5
-    # reward += len(foodDict) / (offensiveFoodEaten + 1)
-    reward += len(foodDict) + offensiveFoodEaten
+    reward += len(foodDict) / (offensiveFoodEaten + 1)
+    # reward += len(foodDict) + offensiveFoodEaten
     # reward += len(foodDict) + offensiveFoodEaten
   if state in capsuleDict:
     # Very good to get capsule if being chased
@@ -836,7 +836,7 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     #   reward += 100
     # elif offensiveFoodEaten > 0:
     #   reward += 5*offensiveFoodEaten
-    reward += 5*offensiveFoodEaten + 1
+    reward += 2*offensiveFoodEaten + 5
     # If there is only 2 food left, go back as soon as possible.
     if len(foodDict) <= 2:
       reward += 1000
@@ -855,7 +855,7 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     # scaredAndEntrancesTime = time.time()
     # if state in entrancesDict and offensiveFoodEaten > 0:
     if state in entrancesDict:
-      reward += 10*offensiveFoodEaten
+      reward += 100 + offensiveFoodEaten
     # totalFeatureCalculatingTime[5] += time.time() - scaredAndEntrancesTime
 
     # start = time.time()
@@ -886,7 +886,7 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     #   reward -= 20
 
     if numWallsDict[state] >= 3:
-      reward -= 10
+      reward -= 20
 
     # totalFeatureCalculatingTime[3] += time.time() - startWallsTime
 
@@ -911,7 +911,7 @@ ghostPositions, wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDi
   ACTION_INDEX = 0
   Q_VALUE_INDEX = 1
 
-  numIterations = 100
+  numIterations = 120
 
   # print("offensive positions length:", len(offensivePositions))
   # print("actions length:", len(offensivePositions))
@@ -1039,7 +1039,7 @@ def ghostDistancesRewardDict(possibleOffensivePositions, ghostPositions):
       if distance <= 1:
         ghostDistanceRewardDict[position] = sys.maxsize
       else:
-        ghostDistanceRewardDict[position] += 50/distance
+        ghostDistanceRewardDict[position] += 30/distance
 
   return ghostDistanceRewardDict
 
