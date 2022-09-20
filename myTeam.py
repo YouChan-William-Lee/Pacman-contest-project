@@ -334,18 +334,18 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       if self.offensiveFoodEaten >= 6:
         self.storeFood = True
 
-      if self.index == 0:
-        print("is pacman")
+      # if self.index == 0:
+      #   print("is pacman")
 
       ghostDistanceRewardDict = ghostDistancesRewardDict(self.offensivePositions, ghostPositions)
-      if self.index == 0:
-        print("Performing value iterations for red agent")
+      # if self.index == 0:
+      #   print("Performing value iterations for red agent")
       action = performValueIteration(self.offensivePositions,self.legalOffensiveActions,self.discountFactor,currentPosition,
       foodDict, capsuleDict, self.entrancesDict, self.storeFood, beingChased, ghostAgents, self.offensiveFoodEaten, gameState, currentDirection,
       ghostPositions, self.wallsDict, teammatePosition, self.numWallsDict, ghostDistanceRewardDict)
       # print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
-      if self.index == 0:
-        print("Policy for red agent: ", action)
+      # if self.index == 0:
+        # print("Policy for red agent: ", action)
       return action[0]
     else:
       self.offensiveFoodEaten = 0
