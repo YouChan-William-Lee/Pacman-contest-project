@@ -813,15 +813,16 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
   if state in foodDict:
     # reward += 5
     if not beingChased:
-      reward += len(foodDict) + offensiveFoodEaten
+      reward += len(foodDict) * 2
     else:
+      # reward += len(foodDict)
       reward += len(foodDict) / (offensiveFoodEaten + 1)
     # reward += len(foodDict) + offensiveFoodEaten
   if state in capsuleDict:
     # Very good to get capsule if being chased
     if beingChased:
       reward += 100
-    reward += 15
+    reward += 10
 
   # Try to split up teammates
   distanceToTeammate = util.manhattanDistance(state, teammatePosition)
@@ -838,7 +839,8 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     #   reward += 100
     # elif offensiveFoodEaten > 0:
     #   reward += 5*offensiveFoodEaten
-    reward += 2*offensiveFoodEaten + 5
+    # reward += 10
+    reward += offensiveFoodEaten
     # If there is only 2 food left, go back as soon as possible.
     if len(foodDict) <= 2:
       reward += 1000
@@ -857,7 +859,7 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
     # scaredAndEntrancesTime = time.time()
     # if state in entrancesDict and offensiveFoodEaten > 0:
     if state in entrancesDict:
-      reward += 100 + offensiveFoodEaten
+      reward += 10 + offensiveFoodEaten
     # totalFeatureCalculatingTime[5] += time.time() - scaredAndEntrancesTime
 
     # start = time.time()
@@ -1038,10 +1040,10 @@ def ghostDistancesRewardDict(possibleOffensivePositions, ghostPositions):
   for position in possibleOffensivePositions:
     for ghostPosition in ghostPositions:
       distance = util.manhattanDistance(position, ghostPosition)
-      if distance <= 1:
+      if distance == 0:
         ghostDistanceRewardDict[position] = sys.maxsize
       else:
-        ghostDistanceRewardDict[position] += 30/distance
+        ghostDistanceRewardDict[position] += 20/distance
 
   return ghostDistanceRewardDict
 
