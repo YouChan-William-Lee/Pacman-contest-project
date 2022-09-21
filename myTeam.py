@@ -12,7 +12,6 @@
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
 
-from turtle import pos
 from captureAgents import CaptureAgent
 import random, time, util
 from distanceCalculator import DistanceCalculator
