@@ -821,7 +821,10 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
   if state in foodDict:
     # reward += 5
     # reward += len(foodDict) / (offensiveFoodEaten + 1)
-    reward += len(foodDict) + offensiveFoodEaten
+    if not beingChased:
+      reward += (len(foodDict) + offensiveFoodEaten) * 2
+    else:
+      reward += len(foodDict) / (offensiveFoodEaten + 1)
   if state in capsuleDict:
     # Very good to get capsule if being chased
     if beingChased:
@@ -831,8 +834,8 @@ currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teamma
   # Try to split up teammates
   distanceToTeammate = util.manhattanDistance(state, teammatePosition)
   # if distanceToTeammate > 3:
-  if distanceToTeammate <= 1:
-    reward -= 2
+  if distanceToTeammate <= 2:
+    reward -= 3
 
   if state in entrancesDict:
     reward += 5*offensiveFoodEaten + 1
