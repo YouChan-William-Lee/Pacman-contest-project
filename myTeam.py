@@ -357,6 +357,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     closestInvader = None
     ghostPositions = []
 
+    
+
     # If scared, just play offense
     if currentAgentState.scaredTimer > 0 and not currentAgentState.isPacman:
       self.offensiveFoodEaten = 0
@@ -450,7 +452,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     #   else:
     #     action = 'West'
 
-    action = aStarSearchToLocation(gameState, self.index, self.nextAttackingPoint, self.isScared)
+    action = aStarSearchToLocation(gameState, self.index, self.nextAttackingPoint, self.isScared, True)
 
 
 
@@ -933,7 +935,7 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
   # Try to split up teammates
   distanceToTeammate = util.manhattanDistance(state, teammatePosition)
   # if distanceToTeammate > 3:
-  if distanceToTeammate <= 2:
+  if distanceToTeammate <= 3:
     # other agent is being chased than - 50
     reward -= 5 * (5/(distanceToTeammate+1))
 
