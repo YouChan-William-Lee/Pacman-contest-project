@@ -205,7 +205,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.totalFoodCount = len(self.getFood(gameState).asList())
     self.lastFoodEaten = None
     print(len(self.getFood(gameState).asList()))
-    print("Greedy double offensive mdp agent V 4.1 - no entrance reward unless being chased")
+    print("Greedy double offensive mdp agent V 4.2 - no entrance reward unless being chased and fixed scared bug")
     # print(self.numWallsDict)
     # print(self.ownOffensiveEntrances)
     
@@ -359,6 +359,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
     # If scared, just play offense
     if currentAgentState.scaredTimer > 0 and not currentAgentState.isPacman:
+      self.offensiveFoodEaten = 0
       action = aStarSearchToLocation(gameState, self.index, self.nextAttackingPoint, False, True)
       return action
 
