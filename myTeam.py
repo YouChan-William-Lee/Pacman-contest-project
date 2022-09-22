@@ -937,9 +937,12 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     # other agent is being chased than - 50
     reward -= 5 * (5/(distanceToTeammate+1))
 
-    if teammateBeingChased:
+    if teammateBeingChased and state not in capsuleDict:
       # reward -= (totalFoodCount*10)/(distanceToTeammate+1)
       reward -= 1000
+
+    # if teammateBeingChased and state in capsuleDict:
+    #   reward += 1000
 
   # if teammateBeingChased:
   #   reward -= (totalFoodCount*10)/(distanceToTeammate+1)
