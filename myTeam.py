@@ -200,14 +200,15 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.storeFood = False
     self.nextAttackingPoint = None
     self.teamIndex = getTeamIndex(self.getTeam(gameState), self.index)
+    # print(self.teamIndex)
     self.ownOffensiveEntrances = getOwnOffensiveEntrances(self.offensiveEntrances, self.teamIndex)
     self.numWallsDict = makeNumWallsDict(self.offensivePositions, self.wallsDict)
     self.totalFoodCount = len(self.getFood(gameState).asList())
     self.lastFoodEaten = None
     print(len(self.getFood(gameState).asList()))
-    print("Greedy double offensive mdp agent V 4.1 - no entrance reward unless being chased")
+    print("Greedy double offensive mdp agentwith defensive switch V 0")
     # print(self.numWallsDict)
-    # print(self.ownOffensiveEntrances)
+    print(self.ownOffensiveEntrances)
     
     CaptureAgent.registerInitialState(self, gameState)
   
@@ -238,14 +239,23 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       if teammate != self.index:
         teammateIndex = teammate
     teammatePosition = gameState.getAgentPosition(teammateIndex)
+    teammateAgentState = gameState.getAgentState(teammateIndex)
 
     currentDirection = currentAgentState.getDirection()
 
     foodToEatList = self.getFood(gameState).asList()
 
-    # If foodtoeatlist is less than or equal to 2, just stay on defense.
-    if len(foodToEatList) <= 2:
+    # If foodtoeatlist is less than or equal to 2, or you are winning by the total food count divided by 4, and you are the first agent
+    # on the team, just stay on defense.
+    # print(self.getScore(gameState) >= self.totalFoodCount/4 and getTeamIndex(self.getTeam(gameState), self.index))
+    # print((len(foodToEatList) <= 2 or self.getScore(gameState) >= 1) and getTeamIndex(self.getTeam(gameState), self.index) == 0)
+    # print("length: ", len(foodToEatList))
+    # print("Score: ", self.getScore(gameState))
+    # print("team index: ", getTeamIndex(self.getTeam(gameState), self.index))
+    # print("Self index", self.index)
+    if (len(foodToEatList) <= 2 or self.getScore(gameState) >= self.totalFoodCount/10) and teammateAgentState.isPacman:
       if not currentAgentState.isPacman:
+        print("DEFENSE")
         # For now, just stop But we want them to play defense now
         # return DefensiveReflexAgent.getAction(self, gameState)
         
@@ -944,8 +954,11 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     # reward +=len(foodDict) * totalFoodCount/10
     
     # # If you've eaten a quarter of the food, going back to entrance is even better
-    if offensiveFoodEaten >= totalFoodCount/4 and beingChased:
-      reward += foodReward * totalFoodCount * 2
+    if offensiveFoodEaten >= totalFoodCount/4:
+      if beingChased:
+        reward += foodReward * totalFoodCount * 2
+      else:
+        reward += foodReward * totalFoodCount
 
     # If there is only 2 food left, go back as soon as possible.
     if len(foodDict) <= 2:
