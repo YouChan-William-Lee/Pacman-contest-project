@@ -205,7 +205,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.totalFoodCount = len(self.getFood(gameState).asList())
     self.lastFoodEaten = None
     print(len(self.getFood(gameState).asList()))
-    print("Greedy double offensive mdp agent V 4.2 - no entrance reward unless being chased and fixed scared bug")
+    print("Greedy double offensive mdp agent V 4.3 - capsule reward increased and reward for entrance even when not chased")
     # print(self.numWallsDict)
     # print(self.ownOffensiveEntrances)
     
@@ -921,18 +921,21 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
       # reward += len(foodDict) / (offensiveFoodEaten + 1)
     
   if state in capsuleDict:
+
+    reward += foodReward / 4
     # Very good to get capsule if being chased
-    if beingChased or teammateBeingChased:
+    if beingChased:
       reward += foodReward * totalFoodCount * 2
+    if teammateBeingChased:
       reward += foodReward * totalFoodCount * 2
     # reward += foodReward / 2
 
   # Try to split up teammates
   distanceToTeammate = util.manhattanDistance(state, teammatePosition)
   # if distanceToTeammate > 3:
-  if distanceToTeammate <= 3:
+  if distanceToTeammate <= 2:
     # other agent is being chased than - 50
-    reward -= 5 * (10/(distanceToTeammate+1))
+    reward -= 5 * (5/(distanceToTeammate+1))
 
     if teammateBeingChased:
       # reward -= (totalFoodCount*10)/(distanceToTeammate+1)
@@ -945,7 +948,10 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     # reward +=len(foodDict) * totalFoodCount/10
     
     # # If you've eaten a quarter of the food, going back to entrance is even better
-    if offensiveFoodEaten >= totalFoodCount/4 and beingChased:
+    if offensiveFoodEaten >= totalFoodCount/4 and not beingChased:
+      reward += foodReward * totalFoodCount * 2
+
+    if offensiveFoodEaten >= totalFoodCount/6 and beingChased:
       reward += foodReward * totalFoodCount * 2
 
     # If there is only 2 food left, go back as soon as possible.
