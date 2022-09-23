@@ -35,7 +35,6 @@ def createTeam(firstIndex, secondIndex, isRed,
   team, initialized using firstIndex and secondIndex as their agent
   index numbers.  isRed is True if the red team is being created, and
   will be False if the blue team is being created.
-
   As a potentially helpful development aid, this function can take
   additional string-valued keyword arguments ("first" and "second" are
   such arguments in the case of this function), which will come from
@@ -52,16 +51,12 @@ def createTeam(firstIndex, secondIndex, isRed,
 
 """
   BRAINSTORMING 30-08-2022
-
   Must use 2 AI-related techniques.
   The first we plan to use is Heuristic Search Algoritms.
   The second we plan to use is Monte Carlo Tree Search.
   Could also possibly use Reinforcement Learning since that will be covered relatively soon.
-
   Try using 2 Offensive agents and also 1 Offensive and 1 Defensive agent.
-
   We can try using A* algorithm for heuristic search. We will need to come up with a heuristic.
-
   General Ideas:
     - Try having the offensive agent(s) rush for a food pellet and take as many food pellets as it can before returning.
     - Maybe try switching from Offensive to Defense
@@ -69,7 +64,6 @@ def createTeam(firstIndex, secondIndex, isRed,
     - Can try blocking path to half through defensive agents.
     - Have to come up with a way to evaluate when to go home.
     - When we have two offensive agents, can try to divide the food among them.
-
 """
 
 ##########
@@ -367,21 +361,12 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       enemy = gameState.getAgentState(agent)
       if enemy.getPosition() != None:
         if currentAgentState.isPacman:
-          if enemy.scaredTimer == 0:
+          if enemy.scaredTimer <= 5:
             if util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3:
               beingChased = True
               ghostAgents.append(enemy)
               ghostPositions.append(enemy.getPosition())
             if util.manhattanDistance(teammateAgentPosition, enemy.getPosition()) <= 3:
-              teammateBeingChased = True
-              # print("Teammate being chased!")
-            # ghostDistances.append(self.distancer.getDistance(currentPosition, enemy.getPosition()))
-          elif 1 <= enemy.scaredTimer <= 5:
-            if util.manhattanDistance(currentPosition, enemy.getPosition()) <= 1:
-              beingChased = True
-              ghostAgents.append(enemy)
-              ghostPositions.append(enemy.getPosition())
-            if util.manhattanDistance(teammateAgentPosition, enemy.getPosition()) <= 1:
               teammateBeingChased = True
               # print("Teammate being chased!")
             # ghostDistances.append(self.distancer.getDistance(currentPosition, enemy.getPosition()))
@@ -931,10 +916,8 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     
   if state in capsuleDict:
     # Very good to get capsule if being chased
-    if beingChased:
-      reward += foodReward * totalFoodCount * 2
-    if teammateBeingChased:
-      reward += foodReward * totalFoodCount * 2
+    if beingChased or teammateBeingChased:
+      reward += foodReward * totalFoodCount * 4
     # reward += foodReward / 2
 
   # Try to split up teammates
@@ -944,7 +927,7 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     # other agent is being chased than - 50
     reward -= 5 * (10/(distanceToTeammate+1))
 
-    if (beingChased or teammateBeingChased) and state not in capsuleDict:
+    if teammateBeingChased and state not in capsuleDict:
       # reward -= (totalFoodCount*10)/(distanceToTeammate+1)
       reward -= 1000
 
@@ -955,9 +938,6 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     # reward +=len(foodDict) * totalFoodCount/10
     
     # # If you've eaten a quarter of the food, going back to entrance is even better
-    if offensiveFoodEaten >= totalFoodCount/4:
-      reward += foodReward * totalFoodCount * 2
-
     if offensiveFoodEaten >= totalFoodCount/4 and beingChased:
       reward += foodReward * totalFoodCount * 2
 
@@ -970,9 +950,9 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     # If the ghost is being chased, give a lot of reward for returning home to store the food.
 
 
-    # if state in entrancesDict and offensiveFoodEaten > 0:
-    #   # reward += 10*offensiveFoodEaten
-    #   reward += foodReward * 2
+    if state in entrancesDict and offensiveFoodEaten > 0:
+      # reward += 10*offensiveFoodEaten
+      reward += foodReward * 2
 
     # To save time, calculating reward of ghost distance reward dict in SEPARATE function called
     # ghostDistancesRewardDict and simple grabbing the reward to subtract from this state.
@@ -980,7 +960,7 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     reward -= ghostDistanceRewardDict[state]
 
     if numWallsDict[state] >= 3:
-      reward -= foodReward/4
+      reward -= 10
 
 
 
@@ -1197,5 +1177,3 @@ def findCloseFoodsToGhost(ghostPositions, foodDict, distanceRange):
           closeToGhostFoodDict[position] = True
 
   return closeToGhostFoodDict
-
-
