@@ -205,7 +205,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.totalFoodCount = len(self.getFood(gameState).asList())
     self.lastFoodEaten = None
     print(len(self.getFood(gameState).asList()))
-    print("Greedy double offensive mdp agent V 4.3 - capsule reward increased and reward for entrance even when not chased")
+    print("Greedy double offensive mdp agent V 4.4 - num walls, distance to teammate, and entrances reward changed.")
     # print(self.numWallsDict)
     # print(self.ownOffensiveEntrances)
     
@@ -941,7 +941,7 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
 
     if teammateBeingChased and state not in capsuleDict:
       # reward -= (totalFoodCount*10)/(distanceToTeammate+1)
-      reward -= 1000
+      reward -= foodReward
 
     # if teammateBeingChased and state in capsuleDict:
     #   reward += 1000
@@ -953,10 +953,7 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     # reward +=len(foodDict) * totalFoodCount/10
     
     # # If you've eaten a quarter of the food, going back to entrance is even better
-    if offensiveFoodEaten >= totalFoodCount/4 and not beingChased:
-      reward += foodReward * totalFoodCount * 2
-
-    if offensiveFoodEaten >= totalFoodCount/6 and beingChased:
+    if offensiveFoodEaten >= totalFoodCount/4 and beingChased:
       reward += foodReward * totalFoodCount * 2
 
     # If there is only 2 food left, go back as soon as possible.
@@ -978,7 +975,7 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     reward -= ghostDistanceRewardDict[state]
 
     if numWallsDict[state] >= 3:
-      reward -= 10
+      reward -= foodReward/4
 
 
 
