@@ -361,12 +361,19 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       enemy = gameState.getAgentState(agent)
       if enemy.getPosition() != None:
         if currentAgentState.isPacman:
-          if enemy.scaredTimer <= 5:
+          if enemy.scaredTimer <= 1:
             if util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3:
               beingChased = True
               ghostAgents.append(enemy)
               ghostPositions.append(enemy.getPosition())
             if util.manhattanDistance(teammateAgentPosition, enemy.getPosition()) <= 3:
+              teammateBeingChased = True
+          if 2 <= enemy.scaredTimer <= 5:
+            if util.manhattanDistance(currentPosition, enemy.getPosition()) <= 1:
+              beingChased = True
+              ghostAgents.append(enemy)
+              ghostPositions.append(enemy.getPosition())
+            if util.manhattanDistance(teammateAgentPosition, enemy.getPosition()) <= 1:
               teammateBeingChased = True
               # print("Teammate being chased!")
             # ghostDistances.append(self.distancer.getDistance(currentPosition, enemy.getPosition()))
@@ -917,7 +924,7 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
   if state in capsuleDict:
     # Very good to get capsule if being chased
     if beingChased or teammateBeingChased:
-      reward += foodReward * totalFoodCount * 4
+      reward += foodReward * totalFoodCount * 5
     # reward += foodReward / 2
 
   # Try to split up teammates
@@ -927,7 +934,7 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     # other agent is being chased than - 50
     reward -= 5 * (10/(distanceToTeammate+1))
 
-    if teammateBeingChased and state not in capsuleDict:
+    if teammateBeingChased:
       # reward -= (totalFoodCount*10)/(distanceToTeammate+1)
       reward -= 1000
 
