@@ -349,7 +349,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         teammateIndex = teammate
 
     teammateAgentPosition = gameState.getAgentPosition(teammateIndex)
-
+    teammateState = gameState.getAgentState(teammateIndex)
     
 
     ghostAgents = []
@@ -372,7 +372,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
               beingChased = True
               ghostAgents.append(enemy)
               ghostPositions.append(enemy.getPosition())
-            if util.manhattanDistance(teammateAgentPosition, enemy.getPosition()) <= 3:
+            if teammateState.isPacman and util.manhattanDistance(teammateAgentPosition, enemy.getPosition()) <= 3:
               teammateBeingChased = True
               # print("Teammate being chased!")
             # ghostDistances.append(self.distancer.getDistance(currentPosition, enemy.getPosition()))
