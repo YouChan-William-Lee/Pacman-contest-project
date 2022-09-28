@@ -230,7 +230,6 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
     currentPosition = gameState.getAgentPosition(self.index)
     currentAgentState = gameState.getAgentState(self.index)
-    
 
     team = self.getTeam(gameState)
     # get index of teammate
@@ -239,7 +238,6 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       if teammate != self.index:
         teammateIndex = teammate
     teammatePosition = gameState.getAgentPosition(teammateIndex)
-    teammateState = gameState.getAgentState(teammateIndex)
 
     currentDirection = currentAgentState.getDirection()
 
@@ -351,7 +349,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         teammateIndex = teammate
 
     teammateAgentPosition = gameState.getAgentPosition(teammateIndex)
-
+    teammateState = gameState.getAgentState(teammateIndex)
     
 
     ghostAgents = []
@@ -369,19 +367,12 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       enemy = gameState.getAgentState(agent)
       if enemy.getPosition() != None:
         if currentAgentState.isPacman:
-          if enemy.scaredTimer <= 1:
+          if enemy.scaredTimer <= 5:
             if util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3:
               beingChased = True
               ghostAgents.append(enemy)
               ghostPositions.append(enemy.getPosition())
             if teammateState.isPacman and util.manhattanDistance(teammateAgentPosition, enemy.getPosition()) <= 3:
-              teammateBeingChased = True
-          elif 2 <= enemy.scaredTimer <= 5:
-            if util.manhattanDistance(currentPosition, enemy.getPosition()) <= 1:
-              beingChased = True
-              ghostAgents.append(enemy)
-              ghostPositions.append(enemy.getPosition())
-            if teammateState.isPacman and util.manhattanDistance(teammateAgentPosition, enemy.getPosition()) <= 1:
               teammateBeingChased = True
               # print("Teammate being chased!")
             # ghostDistances.append(self.distancer.getDistance(currentPosition, enemy.getPosition()))
@@ -392,13 +383,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             # Only chase pacman if the defender teammate is not closer to the enemy or it is very close to the enemy
 
             # if (util.manhattanDistance(gameState.getAgentPosition(teammateIndex), enemy.getPosition()) > util.manhattanDistance(currentPosition, enemy.getPosition())) or (util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3):
-            if (util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3 and not teammateState.isPacman and (util.manhattanDistance(teammateAgentPosition, enemy.getPosition()) >= util.manhattanDistance(currentPosition, enemy.getPosition()))):
-              pacmanBlockingPosition = getPacmanBlockingPosition(gameState.isOnRedTeam(self.index), enemy.getPosition(), currentPosition, self.wallsDict)
-              action = aStarSearchToLocation(gameState, self.index, pacmanBlockingPosition, self.isScared)
-              # print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
-              # print("Chasing pacman")
-              return action
-            elif (util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3 and teammateState.isPacman):
+            if (util.manhattanDistance(currentPosition, enemy.getPosition()) <= 2 and (util.manhattanDistance(teammateAgentPosition, enemy.getPosition()) > util.manhattanDistance(currentPosition, enemy.getPosition()))):
               pacmanBlockingPosition = getPacmanBlockingPosition(gameState.isOnRedTeam(self.index), enemy.getPosition(), currentPosition, self.wallsDict)
               action = aStarSearchToLocation(gameState, self.index, pacmanBlockingPosition, self.isScared)
               # print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
@@ -914,57 +899,18 @@ def generateSuccessor(gameState, action, currentDirection):
 def calculateMDPReward(state, foodDict, capsuleDict, entrancesDict, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState, previousDirection,
 currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teammatePosition, numWallsDict,
 ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDict):
-  reward = 0.0
+  reward = 0
 
   # foodAndCapsuleTime = time.time()
-  if state in foodDict:
-    if beingChased:
-      reward += 20
-    else:
-      reward += 40
 
-  if state in capsuleDict:
-    if beingChased or teammateBeingChased:
-      reward += 500
-
-  if state in entrancesDict:
-    if len(foodDict) <= 2:
-      reward += 1000
-
-    if len(capsuleDict) == 0 and beingChased:
-      reward += 50
-    elif len(capsuleDict) != 0 and beingChased:
-      reward += 40
-
-    if offensiveFoodEaten >= totalFoodCount / 4 and not beingChased:
-      reward += 100
-
-  if beingChased:
-    reward -= ghostDistanceRewardDict[state]
-
-  distanceToTeammate = util.manhattanDistance(state, teammatePosition)
-
-  if distanceToTeammate <= 3:
-    
-    if len(capsuleDict) == 0:
-      reward -= 5
-    elif state not in capsuleDict and teammatePosition not in capsuleDict:
-      reward -= 10
-
-    if not beingChased and not teammateBeingChased:
-      reward -= 50
-
-
-  """ FOR THE PRELIMINARY
   foodReward = 0.0
   # if not beingChased:
   #   foodReward += 10 + 5 * (totalFoodCount - len(foodDict))
   #   # reward += (len(foodDict) + offensiveFoodEaten) * 2
   # else:
-
   foodReward += 10 + 5 * (totalFoodCount - len(foodDict)) / (offensiveFoodEaten+1)
   
-  if not beingChased and state in foodDict:
+  if state in foodDict:
     if state in closeToGhostFoodDict:
       reward += foodReward/2
     else:
@@ -977,7 +923,8 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
   if state in capsuleDict:
     # Very good to get capsule if being chased
     if beingChased or teammateBeingChased:
-      reward += foodReward * totalFoodCount * 6
+      reward += foodReward * totalFoodCount * 2
+      reward += foodReward * totalFoodCount * 2
     # reward += foodReward / 2
 
   # Try to split up teammates
@@ -987,7 +934,7 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     # other agent is being chased than - 50
     reward -= 5 * (10/(distanceToTeammate+1))
 
-    if (beingChased or teammateBeingChased) and (state not in capsuleDict and teammatePosition not in capsuleDict):
+    if teammateBeingChased:
       # reward -= (totalFoodCount*10)/(distanceToTeammate+1)
       reward -= 1000
 
@@ -996,17 +943,10 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
 
   if state in entrancesDict:
     # reward +=len(foodDict) * totalFoodCount/10
-    if offensiveFoodEaten >= totalFoodCount/4:
-      reward += foodReward * totalFoodCount * 3
-
-    if len(capsuleDict) == 0 and offensiveFoodEaten >= totalFoodCount/4 and beingChased:
-      reward += foodReward * totalFoodCount * 3
-    elif len(capsuleDict) != 0 and offensiveFoodEaten >= totalFoodCount/4 and beingChased:
-      reward += foodReward * totalFoodCount
-
+    
     # # If you've eaten a quarter of the food, going back to entrance is even better
-    # if offensiveFoodEaten >= totalFoodCount/4 and beingChased:
-    #   reward += foodReward * totalFoodCount * 2
+    if offensiveFoodEaten >= totalFoodCount/4 and beingChased:
+      reward += foodReward * totalFoodCount * 2
 
     # If there is only 2 food left, go back as soon as possible.
     if len(foodDict) <= 2:
@@ -1015,14 +955,11 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
 
   if beingChased:
     # If the ghost is being chased, give a lot of reward for returning home to store the food.
-    
-    
-    # if offensiveFoodEaten >= totalFoodCount/4:
-    #   reward += foodReward * totalFoodCount * 2
 
-    # if state in entrancesDict and offensiveFoodEaten > 0:
-    #   # reward += 10*offensiveFoodEaten
-    #   reward += foodReward * 2
+
+    if state in entrancesDict and offensiveFoodEaten > 0:
+      # reward += 10*offensiveFoodEaten
+      reward += foodReward * 2
 
     # To save time, calculating reward of ghost distance reward dict in SEPARATE function called
     # ghostDistancesRewardDict and simple grabbing the reward to subtract from this state.
@@ -1030,10 +967,10 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     reward -= ghostDistanceRewardDict[state]
 
     if numWallsDict[state] >= 3:
-      reward -= foodReward/4
+      reward -= 10
 
 
-  """
+
   return reward
 
 # Method to perform the value iteration. Returns an action.
@@ -1051,7 +988,7 @@ ghostPositions, wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDi
   ACTION_INDEX = 0
   Q_VALUE_INDEX = 1
 
-  numIterations = 150
+  numIterations = 120
 
   # print("offensive positions length:", len(offensivePositions))
   # print("actions length:", len(offensivePositions))
@@ -1181,7 +1118,7 @@ def ghostDistancesRewardDict(possibleOffensivePositions, ghostPositions):
       if distance <= 1:
         ghostDistanceRewardDict[position] = sys.maxsize
       else:
-        ghostDistanceRewardDict[position] += 50/distance
+        ghostDistanceRewardDict[position] += 20/distance
 
   return ghostDistanceRewardDict
 
