@@ -205,7 +205,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.totalFoodCount = len(self.getFood(gameState).asList())
     self.lastFoodEaten = None
     print(len(self.getFood(gameState).asList()))
-    print("Greedy double offensive mdp agent V 5 - try to fix pacman running from almost not scared ghosts, and not eating capsule")
+    print("double offensive and defensive mdp agent V1 - play defense if winning")
     # print(self.numWallsDict)
     # print(self.ownOffensiveEntrances)
     
@@ -297,38 +297,38 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         # # print(action)
         return action
       
-      # Try to get to the closest entrance to lost food
-      if self.getPreviousObservation():
-        # # print("Check food here")
-        eatenFoods = checkEatenFoods(self.red, self.getPreviousObservation(), gameState)
-        closestFood = None
+      # # Try to get to the closest entrance to lost food
+      # if self.getPreviousObservation():
+      #   # # print("Check food here")
+      #   eatenFoods = checkEatenFoods(self.red, self.getPreviousObservation(), gameState)
+      #   closestFood = None
         
-        # Decide which food to go for when a food is eated on our side.
-        # We don't do this action straight away, as it is important we update the last food eaten
-        # BEFORE we a star to any invaders. And then, if there are no invaders, THEN we A* to food.
-        if len(eatenFoods) == 2:
-          distanceToFirstFood = util.manhattanDistance(currentPosition, eatenFoods[0])
-          distanceToSecondFood = util.manhattanDistance(currentPosition, eatenFoods[1])
-          if distanceToFirstFood < distanceToSecondFood:
-            closestFood = eatenFoods[0]
-          else:
-            closestFood = eatenFoods[1]
-        elif len(eatenFoods) == 1:
-          closestFood = eatenFoods[0]
+      #   # Decide which food to go for when a food is eated on our side.
+      #   # We don't do this action straight away, as it is important we update the last food eaten
+      #   # BEFORE we a star to any invaders. And then, if there are no invaders, THEN we A* to food.
+      #   if len(eatenFoods) == 2:
+      #     distanceToFirstFood = util.manhattanDistance(currentPosition, eatenFoods[0])
+      #     distanceToSecondFood = util.manhattanDistance(currentPosition, eatenFoods[1])
+      #     if distanceToFirstFood < distanceToSecondFood:
+      #       closestFood = eatenFoods[0]
+      #     else:
+      #       closestFood = eatenFoods[1]
+      #   elif len(eatenFoods) == 1:
+      #     closestFood = eatenFoods[0]
 
-        if closestFood != None:
-        # # print("Setting last eaten food")
-          self.lastFoodEaten = closestFood
+      #   if closestFood != None:
+      #   # # print("Setting last eaten food")
+      #     self.lastFoodEaten = closestFood
 
-        # A star to this
-        if self.lastFoodEaten != None:
-          closestEntranceToLostFood = getLostFoodClosestEntrance(self.lastFoodEaten, self.entrancesDict)
+      #   # A star to this
+      #   if self.lastFoodEaten != None:
+      #     closestEntranceToLostFood = getLostFoodClosestEntrance(self.lastFoodEaten, self.entrancesDict)
 
-          action = aStarSearchToLocation(gameState, self.index, closestEntranceToLostFood)
-          return action
-        else:
-          action = aStarSearchToLocation(gameState, self.index, self.middle)
-          return action
+      #     action = aStarSearchToLocation(gameState, self.index, closestEntranceToLostFood)
+      #     return action
+      #   else:
+      action = aStarSearchToLocation(gameState, self.index, self.middle)
+      return action
 
     foodDict = {}
     capsuleDict = {}
@@ -388,7 +388,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
         # If currently the agent is on defense and it sees a pacman, chase
         else:
-          if enemy.isPacman:
+          if enemy.isPacman and currentScore < 0:
             # Only chase pacman if the defender teammate is not closer to the enemy or it is very close to the enemy
 
             # if (util.manhattanDistance(gameState.getAgentPosition(teammateIndex), enemy.getPosition()) > util.manhattanDistance(currentPosition, enemy.getPosition())) or (util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3):
@@ -435,7 +435,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       closeToGhostFoodDict = findCloseFoodsToGhost(ghostPositions, foodDict, 5)
       action = performValueIteration(self.offensivePositions,self.legalOffensiveActions,self.discountFactor,currentPosition,
       foodDict, capsuleDict, self.entrancesDict, self.storeFood, beingChased, ghostAgents, self.offensiveFoodEaten, gameState, currentDirection,
-      ghostPositions, self.wallsDict, teammatePosition, self.numWallsDict, ghostDistanceRewardDict, self.totalFoodCount, teammateBeingChased, closeToGhostFoodDict)
+      ghostPositions, self.wallsDict, teammatePosition, self.numWallsDict, ghostDistanceRewardDict, self.totalFoodCount, teammateBeingChased,
+      closeToGhostFoodDict, currentScore, currentAgentState.scaredTimer)
       # print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
       # if self.index == 0:
       #   print("Policy for red agent: ", action)
@@ -907,7 +908,7 @@ def generateSuccessor(gameState, action, currentDirection):
 # MDP function to calculate the reward.
 def calculateMDPReward(state, foodDict, capsuleDict, entrancesDict, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState, previousDirection,
 currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teammatePosition, numWallsDict,
-ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDict):
+ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDict, currentScore, agentScaredTimer):
   reward = 0
 
   # foodAndCapsuleTime = time.time()
@@ -954,7 +955,10 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     
     # # If you've eaten a quarter of the food, going back to entrance is even better
     # if offensiveFoodEaten >= totalFoodCount/4 and beingChased:
-    if offensiveFoodEaten >= totalFoodCount/4:
+    if offensiveFoodEaten >= totalFoodCount/2:
+      reward += foodReward * totalFoodCount * 2
+
+    if currentScore + offensiveFoodEaten > 2 and agentScaredTimer <= 0:
       reward += foodReward * totalFoodCount * 2
 
     # If there is only 2 food left, go back as soon as possible.
@@ -985,7 +989,8 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
 # Method to perform the value iteration. Returns an action.
 def performValueIteration(offensivePositions, legalOffensiveActions, discountFactor,
 currentPosition, foodDict, capsuleDict, entrancesDict, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState, currentDirection,
-ghostPositions, wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDict):
+ghostPositions, wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDict, totalFoodCount, teammateBeingChased,
+closeToGhostFoodDict, currentScore, agentScaredTimer):
 
   # Check how long it takes to perform value iteration
   start = time.time()
@@ -1027,7 +1032,8 @@ ghostPositions, wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDi
         # startCalculatingReward = time.time()
         QDict[action] = calculateMDPReward(state, foodDict, capsuleDict, entrancesDict, storeFood, beingChased,
         ghostAgents, offensiveFoodEaten, gameState, currentDirection, childState[1], totalFeatureCalculatingTime, ghostPositions,
-        wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDict) + discountFactor * previousPolicies[childState[0]][Q_VALUE_INDEX]
+        wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDict, totalFoodCount, teammateBeingChased,
+        closeToGhostFoodDict, currentScore, agentScaredTimer) + discountFactor * previousPolicies[childState[0]][Q_VALUE_INDEX]
         # totalRewardTime += (time.time() - startCalculatingReward)
         # print("action set:", QDict[action])
 
