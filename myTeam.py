@@ -205,7 +205,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.totalFoodCount = len(self.getFood(gameState).asList())
     self.lastFoodEaten = None
     print(len(self.getFood(gameState).asList()))
-    print("Greedy double offensive mdp agent V 4.2 - no entrance reward unless being chased and fixed scared bug")
+    print("Greedy double offensive mdp agent V 5 - try to fix pacman running from almost not scared ghosts, and not eating capsule")
     # print(self.numWallsDict)
     # print(self.ownOffensiveEntrances)
     
@@ -923,8 +923,7 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
   if state in capsuleDict:
     # Very good to get capsule if being chased
     if beingChased or teammateBeingChased:
-      reward += foodReward * totalFoodCount * 2
-      reward += foodReward * totalFoodCount * 2
+      reward += foodReward * totalFoodCount * 6
     # reward += foodReward / 2
 
   # Try to split up teammates
