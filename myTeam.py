@@ -973,11 +973,11 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     
     # # If you've eaten a quarter of the food, going back to entrance is even better
     # if offensiveFoodEaten >= totalFoodCount/4 and beingChased:
-    if offensiveFoodEaten >= totalFoodCount/2:
+    if offensiveFoodEaten >= totalFoodCount/4:
       reward += foodReward * totalFoodCount * 2
 
     if currentScore + offensiveFoodEaten > 0 and agentScaredTimer <= 10:
-      reward += foodReward * totalFoodCount * 2
+      reward += foodReward * totalFoodCount * 4
 
     # If there is only 2 food left, go back as soon as possible.
     if len(foodDict) <= 2:
