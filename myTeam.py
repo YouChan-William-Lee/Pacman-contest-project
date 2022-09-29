@@ -199,16 +199,19 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.offensiveFoodEaten = 0
     self.storeFood = False
     self.nextAttackingPoint = None
-    self.teamIndex = getTeamIndex(self.getTeam(gameState), self.index)
+    self.teamIndex = getTeamIndex(gameState.isOnRedTeam(self.index), self.getTeam(gameState), self.index)
     self.ownOffensiveEntrances = getOwnEntrances(self.offensiveEntrances, self.teamIndex)
     self.ownDefensiveEntrances = getOwnEntrances(self.entrances, self.teamIndex)
     self.numWallsDict = makeNumWallsDict(self.offensivePositions, self.wallsDict)
     self.totalFoodCount = len(self.getFood(gameState).asList())
     self.lastFoodEaten = None
     print(len(self.getFood(gameState).asList()))
-    print("double offensive and defensive mdp agent V2 - a star to y position when blocking an offensive pacman")
+    print("double offensive and defensive mdp agent V3 - make capsules worth more and only check score > 0 instead of 2")
     # print(self.numWallsDict)
+    # print("Team index:", self.teamIndex)
+    # print("agent index:", self.index)
     # print(self.ownOffensiveEntrances)
+    # print(self.ownDefensiveEntrances)
     
     CaptureAgent.registerInitialState(self, gameState)
   
@@ -280,6 +283,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       for enemy in self.getOpponents(gameState):
         invader = gameState.getAgentState(enemy)
         if invader.isPacman and invader.getPosition() != None:
+        # if invader.getPosition() != None: # Try also checking for ghost and not just pacman
           seenInvaders.append(invader)
 
       # If the defensive agent knows where the enemies are
@@ -654,6 +658,9 @@ def aStarSearchToLocation(gameState, agentIndex, location, isScared=False, isOff
               return currentStatePath[0] # Return the first action on the path  
         else:
           if currentStatePosition[1] == location[1]:
+            teamIsRed = gameState.isOnRedTeam(agentIndex)
+
+            if (teamIsRed and currentStatePosition[0] >= location[0]) or (not teamIsRed and currentStatePosition[0] <= location[0]):
 
               if len(currentStatePath) == 0: # Return STOP if the location has been reached and there is no more path.
                 return "Stop"
@@ -969,7 +976,7 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     if offensiveFoodEaten >= totalFoodCount/2:
       reward += foodReward * totalFoodCount * 2
 
-    if currentScore + offensiveFoodEaten > 2 and agentScaredTimer <= 10:
+    if currentScore + offensiveFoodEaten > 0 and agentScaredTimer <= 10:
       reward += foodReward * totalFoodCount * 2
 
     # If there is only 2 food left, go back as soon as possible.
@@ -981,9 +988,11 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     # If the ghost is being chased, give a lot of reward for returning home to store the food.
 
 
-    if state in entrancesDict and offensiveFoodEaten > 0:
+    if state in entrancesDict:
+      # if state in entrancesDict and offensiveFoodEaten > 0:
       # reward += 10*offensiveFoodEaten
-      reward += foodReward * 2
+      # reward += foodReward * 2
+      reward += foodReward * totalFoodCount * 6
 
     # To save time, calculating reward of ghost distance reward dict in SEPARATE function called
     # ghostDistancesRewardDict and simple grabbing the reward to subtract from this state.
@@ -1123,11 +1132,15 @@ def makeNumWallsDict(offensiveStates, wallsDict):
 
 
 # This method returns the index of the agent in their team
-def getTeamIndex(team, index):
-  # Agent names are 1 - 4 whereas indexes are 0 - 3, so we add 1
-  index += 1
+def getTeamIndex(teamIsRed, team, index):
+  # add 1 if red team
+  if teamIsRed:
+    index += 1
   # print("agent index:", index)
   # print("team: ", team)
+  # print("Team:", team)
+  # print(team[0])
+  # print(index)
   if team[0] == index:
     # print("Returning 0")
     return 0
