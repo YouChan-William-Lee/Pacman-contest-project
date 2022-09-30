@@ -991,7 +991,7 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     # if state in entrancesDict:
     if state in entrancesDict and offensiveFoodEaten > 0:
       # reward += 10*offensiveFoodEaten
-      reward += foodReward * 2
+      reward += foodReward * totalFoodCount * 2
       # reward += foodReward * totalFoodCount * 6
 
     # To save time, calculating reward of ghost distance reward dict in SEPARATE function called
