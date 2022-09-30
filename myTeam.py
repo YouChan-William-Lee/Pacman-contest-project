@@ -300,8 +300,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
         # Try to block the pacman position if u can see
         if closestInvader != None:
-          pacmanBlockingPosition = getPacmanBlockingPosition(gameState.isOnRedTeam(self.index), closestInvader.getPosition(), currentPosition, self.wallsDict)
-          action = aStarSearchToLocation(gameState, self.index, pacmanBlockingPosition, self.isScared, False, True)
+          # pacmanBlockingPosition = getPacmanBlockingPosition(gameState.isOnRedTeam(self.index), closestInvader.getPosition(), currentPosition, self.wallsDict)
+          action = aStarSearchToLocation(gameState, self.index, closestInvader.getPosition(), self.isScared, False, True)
           # # print(action)
           return action
       
@@ -401,8 +401,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
             # if (util.manhattanDistance(gameState.getAgentPosition(teammateIndex), enemy.getPosition()) > util.manhattanDistance(currentPosition, enemy.getPosition())) or (util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3):
             if (util.manhattanDistance(currentPosition, enemy.getPosition()) <= 2 and (util.manhattanDistance(teammatePosition, enemy.getPosition()) > util.manhattanDistance(currentPosition, enemy.getPosition()))):
-              pacmanBlockingPosition = getPacmanBlockingPosition(gameState.isOnRedTeam(self.index), enemy.getPosition(), currentPosition, self.wallsDict)
-              action = aStarSearchToLocation(gameState, self.index, pacmanBlockingPosition, self.isScared)
+              # pacmanBlockingPosition = getPacmanBlockingPosition(gameState.isOnRedTeam(self.index), enemy.getPosition(), currentPosition, self.wallsDict)
+              action = aStarSearchToLocation(gameState, self.index, closestInvader.getPosition(), self.isScared, False, True)
               # print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
               # print("Chasing pacman")
               return action
