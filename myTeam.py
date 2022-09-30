@@ -206,7 +206,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.totalFoodCount = len(self.getFood(gameState).asList())
     self.lastFoodEaten = None
     print(len(self.getFood(gameState).asList()))
-    print("double offensive and defensive mdp agent V3 - make capsules worth more and only check score > 0 instead of 2")
+    print("double offensive and defensive mdp agent V4 - got rid of pacman blocking position")
     # print(self.numWallsDict)
     # print("Team index:", self.teamIndex)
     # print("agent index:", self.index)
