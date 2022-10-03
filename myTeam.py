@@ -206,7 +206,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.totalFoodCount = len(self.getFood(gameState).asList())
     self.lastFoodEaten = None
     print(len(self.getFood(gameState).asList()))
-    print("double offensive and defensive mdp agent V4 - got rid of pacman blocking position")
+    print("double offensive and defensive mdp agent V5 - more reward for entrance state when being chased")
     # print(self.numWallsDict)
     # print("Team index:", self.teamIndex)
     # print("agent index:", self.index)
@@ -991,7 +991,8 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     # if state in entrancesDict:
     if state in entrancesDict and offensiveFoodEaten > 0:
       # reward += 10*offensiveFoodEaten
-      reward += foodReward * 2
+      # reward += foodReward * 2
+      reward += foodReward * totalFoodCount * 2
       # reward += foodReward * totalFoodCount * 6
 
     # To save time, calculating reward of ghost distance reward dict in SEPARATE function called
