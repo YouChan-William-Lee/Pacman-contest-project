@@ -367,6 +367,7 @@ class MDPAgent(BaseMDPAgent):
 
     beingChased = False
     teammateBeingChased = False
+
     
 
     ghostAgents = []
