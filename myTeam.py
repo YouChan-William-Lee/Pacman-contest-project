@@ -29,7 +29,7 @@ import sys
 #################
 
 def createTeam(firstIndex, secondIndex, isRed,
-               first = 'OffensiveReflexAgent', second = 'OffensiveReflexAgent', numTraining = 0):
+               first = 'MDPAgent', second = 'MDPAgent', numTraining = 0):
   """
   This function should return a list of two agents that will form the
   team, initialized using firstIndex and secondIndex as their agent
@@ -124,7 +124,7 @@ def createTeam(firstIndex, secondIndex, isRed,
 
 #     return random.choice(actions)
 
-class ReflexCaptureAgent(CaptureAgent):
+class BaseMDPAgent(CaptureAgent):
   """
   A base class for reflex agents that chooses score-maximizing actions
   """
@@ -172,7 +172,7 @@ class ReflexCaptureAgent(CaptureAgent):
     return random.choice(bestActions)
 
 
-class OffensiveReflexAgent(ReflexCaptureAgent):
+class MDPAgent(BaseMDPAgent):
   """
   A reflex agent that seeks food. This is an agent
   we give you to get an idea of what an offensive agent might look like,
@@ -199,15 +199,19 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.offensiveFoodEaten = 0
     self.storeFood = False
     self.nextAttackingPoint = None
-    self.teamIndex = getTeamIndex(self.getTeam(gameState), self.index)
-    self.ownOffensiveEntrances = getOwnOffensiveEntrances(self.offensiveEntrances, self.teamIndex)
+    self.teamIndex = getTeamIndex(gameState.isOnRedTeam(self.index), self.getTeam(gameState), self.index)
+    self.ownOffensiveEntrances = getOwnEntrances(self.offensiveEntrances, self.teamIndex)
+    self.ownDefensiveEntrances = getOwnEntrances(self.entrances, self.teamIndex)
     self.numWallsDict = makeNumWallsDict(self.offensivePositions, self.wallsDict)
     self.totalFoodCount = len(self.getFood(gameState).asList())
     self.lastFoodEaten = None
     print(len(self.getFood(gameState).asList()))
-    print("Greedy double offensive mdp agent V 4.2 - no entrance reward unless being chased and fixed scared bug")
+    print("double offensive and defensive mdp agent V5 - more reward for entrance state when being chased")
     # print(self.numWallsDict)
+    # print("Team index:", self.teamIndex)
+    # print("agent index:", self.index)
     # print(self.ownOffensiveEntrances)
+    # print(self.ownDefensiveEntrances)
     
     CaptureAgent.registerInitialState(self, gameState)
   
@@ -230,7 +234,12 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
     currentPosition = gameState.getAgentPosition(self.index)
     currentAgentState = gameState.getAgentState(self.index)
+    currentScore = self.getScore(gameState)
 
+    if not currentAgentState.isPacman:
+      self.offensiveFoodEaten = 0
+    
+    # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv  Copied from down (CTRL + Z) for going back
     team = self.getTeam(gameState)
     # get index of teammate
     teammateIndex = -1
@@ -238,77 +247,96 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       if teammate != self.index:
         teammateIndex = teammate
     teammatePosition = gameState.getAgentPosition(teammateIndex)
+    teammateState = gameState.getAgentState(teammateIndex)
+    # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     currentDirection = currentAgentState.getDirection()
 
     foodToEatList = self.getFood(gameState).asList()
 
+    # Defend when team mate agent is Pacman and wining 
+    # certainAmountOfScores = self.totalFoodCount / 4
+    certainAmountOfScores = 1
+
+    # if teammateState.isPacman and currentScore >= certainAmountOfScores:
+    #   print("defend")
+      # One idea when only few food left and we are defending
+      # We can get the left food's location by self.getFoodYouAreDefending(gameState)
+      # Only petroling these foods
+
+      # do defensive -> probably copy some codes from defensive agent?
+
     # If foodtoeatlist is less than or equal to 2, just stay on defense.
-    if len(foodToEatList) <= 2:
-      if not currentAgentState.isPacman:
-        # For now, just stop But we want them to play defense now
-        # return DefensiveReflexAgent.getAction(self, gameState)
-        
-        # DO DEFENSIVE ACTION HERE
+    if (len(foodToEatList) <= 2 and not currentAgentState.isPacman) or (currentScore >= certainAmountOfScores and not currentAgentState.isPacman and currentAgentState.scaredTimer <= 10):
+      # For now, just stop But we want them to play defense now
+      # return DefensiveReflexAgent.getAction(self, gameState)
 
-        # If we see a pacman, then we a star to them
+      
+      
+      # DO DEFENSIVE ACTION HERE
 
-        # print("AGENT DEFENDING: ", self.index)
+      # If we see a pacman, then we a star to them
 
-        seenInvaders = []
-        for enemy in self.getOpponents(gameState):
-          invader = gameState.getAgentState(enemy)
-          if invader.isPacman and invader.getPosition() != None:
-            seenInvaders.append(invader)
+      # print("AGENT DEFENDING: ", self.index)
 
-        # If the defensive agent knows where the enemies are
-        if len(seenInvaders) > 0:
-          closestInvader = None
-          closestDistanceToInvader = sys.maxsize
-          for invader in seenInvaders:
-            distance = util.manhattanDistance(currentPosition, invader.getPosition())
+      seenInvaders = []
+      for enemy in self.getOpponents(gameState):
+        invader = gameState.getAgentState(enemy)
+        if invader.isPacman and invader.getPosition() != None:
+        # if invader.getPosition() != None: # Try also checking for ghost and not just pacman
+          seenInvaders.append(invader)
+
+      # If the defensive agent knows where the enemies are
+      if len(seenInvaders) > 0:
+        closestInvader = None
+        closestDistanceToInvader = sys.maxsize
+        for invader in seenInvaders:
+          distance = util.manhattanDistance(currentPosition, invader.getPosition())
+          teammateDistance = util.manhattanDistance(teammatePosition, invader.getPosition())
+          if distance <= teammateDistance:
             if distance < closestDistanceToInvader:
               closestInvader = invader
               closestDistanceToInvader = distance
 
-          # Try to block the pacman position if u can see
-          pacmanBlockingPosition = getPacmanBlockingPosition(gameState.isOnRedTeam(self.index), closestInvader.getPosition(), currentPosition, self.wallsDict)
-          action = aStarSearchToLocation(gameState, self.index, pacmanBlockingPosition, self.isScared)
+        # Try to block the pacman position if u can see
+        if closestInvader != None:
+          # pacmanBlockingPosition = getPacmanBlockingPosition(gameState.isOnRedTeam(self.index), closestInvader.getPosition(), currentPosition, self.wallsDict)
+          action = aStarSearchToLocation(gameState, self.index, closestInvader.getPosition(), self.isScared, False, True)
           # # print(action)
           return action
+      
+      # # Try to get to the closest entrance to lost food
+      # if self.getPreviousObservation():
+      #   # # print("Check food here")
+      #   eatenFoods = checkEatenFoods(self.red, self.getPreviousObservation(), gameState)
+      #   closestFood = None
         
-        # Try to get to the closest entrance to lost food
-        if self.getPreviousObservation():
-          # # print("Check food here")
-          eatenFoods = checkEatenFoods(self.red, self.getPreviousObservation(), gameState)
-          closestFood = None
-          
-          # Decide which food to go for when a food is eated on our side.
-          # We don't do this action straight away, as it is important we update the last food eaten
-          # BEFORE we a star to any invaders. And then, if there are no invaders, THEN we A* to food.
-          if len(eatenFoods) == 2:
-            distanceToFirstFood = util.manhattanDistance(currentPosition, eatenFoods[0])
-            distanceToSecondFood = util.manhattanDistance(currentPosition, eatenFoods[1])
-            if distanceToFirstFood < distanceToSecondFood:
-              closestFood = eatenFoods[0]
-            else:
-              closestFood = eatenFoods[1]
-          elif len(eatenFoods) == 1:
-            closestFood = eatenFoods[0]
+      #   # Decide which food to go for when a food is eated on our side.
+      #   # We don't do this action straight away, as it is important we update the last food eaten
+      #   # BEFORE we a star to any invaders. And then, if there are no invaders, THEN we A* to food.
+      #   if len(eatenFoods) == 2:
+      #     distanceToFirstFood = util.manhattanDistance(currentPosition, eatenFoods[0])
+      #     distanceToSecondFood = util.manhattanDistance(currentPosition, eatenFoods[1])
+      #     if distanceToFirstFood < distanceToSecondFood:
+      #       closestFood = eatenFoods[0]
+      #     else:
+      #       closestFood = eatenFoods[1]
+      #   elif len(eatenFoods) == 1:
+      #     closestFood = eatenFoods[0]
 
-          if closestFood != None:
-          # # print("Setting last eaten food")
-            self.lastFoodEaten = closestFood
+      #   if closestFood != None:
+      #   # # print("Setting last eaten food")
+      #     self.lastFoodEaten = closestFood
 
-          # A star to this
-          if self.lastFoodEaten != None:
-            closestEntranceToLostFood = getLostFoodClosestEntrance(self.lastFoodEaten, self.entrancesDict)
+      #   # A star to this
+      #   if self.lastFoodEaten != None:
+      #     closestEntranceToLostFood = getLostFoodClosestEntrance(self.lastFoodEaten, self.entrancesDict)
 
-            action = aStarSearchToLocation(gameState, self.index, closestEntranceToLostFood)
-            return action
-          else:
-            action = aStarSearchToLocation(gameState, self.index, self.middle)
-            return action
+      #     action = aStarSearchToLocation(gameState, self.index, closestEntranceToLostFood)
+      #     return action
+      #   else:
+      action = aStarSearchToLocation(gameState, self.index, self.ownDefensiveEntrances[len(self.ownDefensiveEntrances)//2])
+      return action
 
     foodDict = {}
     capsuleDict = {}
@@ -341,16 +369,6 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     teammateBeingChased = False
 
     
-    team = self.getTeam(gameState)
-    # get index of teammate
-    teammateIndex = -1
-    for teammate in team:
-      if teammate != self.index:
-        teammateIndex = teammate
-
-    teammateAgentPosition = gameState.getAgentPosition(teammateIndex)
-    teammateState = gameState.getAgentState(teammateIndex)
-    
 
     ghostAgents = []
     seenInvaders = []
@@ -372,20 +390,20 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
               beingChased = True
               ghostAgents.append(enemy)
               ghostPositions.append(enemy.getPosition())
-            if teammateState.isPacman and util.manhattanDistance(teammateAgentPosition, enemy.getPosition()) <= 3:
+            if teammateState.isPacman and util.manhattanDistance(teammatePosition, enemy.getPosition()) <= 3:
               teammateBeingChased = True
               # print("Teammate being chased!")
             # ghostDistances.append(self.distancer.getDistance(currentPosition, enemy.getPosition()))
 
         # If currently the agent is on defense and it sees a pacman, chase
         else:
-          if enemy.isPacman:
+          if enemy.isPacman and currentScore < 0:
             # Only chase pacman if the defender teammate is not closer to the enemy or it is very close to the enemy
 
             # if (util.manhattanDistance(gameState.getAgentPosition(teammateIndex), enemy.getPosition()) > util.manhattanDistance(currentPosition, enemy.getPosition())) or (util.manhattanDistance(currentPosition, enemy.getPosition()) <= 3):
-            if (util.manhattanDistance(currentPosition, enemy.getPosition()) <= 2 and (util.manhattanDistance(teammateAgentPosition, enemy.getPosition()) > util.manhattanDistance(currentPosition, enemy.getPosition()))):
-              pacmanBlockingPosition = getPacmanBlockingPosition(gameState.isOnRedTeam(self.index), enemy.getPosition(), currentPosition, self.wallsDict)
-              action = aStarSearchToLocation(gameState, self.index, pacmanBlockingPosition, self.isScared)
+            if (util.manhattanDistance(currentPosition, enemy.getPosition()) <= 2 and (util.manhattanDistance(teammatePosition, enemy.getPosition()) > util.manhattanDistance(currentPosition, enemy.getPosition()))):
+              # pacmanBlockingPosition = getPacmanBlockingPosition(gameState.isOnRedTeam(self.index), enemy.getPosition(), currentPosition, self.wallsDict)
+              action = aStarSearchToLocation(gameState, self.index, enemy.getPosition(), self.isScared, False, True)
               # print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
               # print("Chasing pacman")
               return action
@@ -426,7 +444,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       closeToGhostFoodDict = findCloseFoodsToGhost(ghostPositions, foodDict, 5)
       action = performValueIteration(self.offensivePositions,self.legalOffensiveActions,self.discountFactor,currentPosition,
       foodDict, capsuleDict, self.entrancesDict, self.storeFood, beingChased, ghostAgents, self.offensiveFoodEaten, gameState, currentDirection,
-      ghostPositions, self.wallsDict, teammatePosition, self.numWallsDict, ghostDistanceRewardDict, self.totalFoodCount, teammateBeingChased, closeToGhostFoodDict)
+      ghostPositions, self.wallsDict, teammatePosition, self.numWallsDict, ghostDistanceRewardDict, self.totalFoodCount, teammateBeingChased,
+      closeToGhostFoodDict, currentScore, currentAgentState.scaredTimer)
       # print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
       # if self.index == 0:
       #   print("Policy for red agent: ", action)
@@ -458,154 +477,9 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     # print ('eval time for phantomtroupe offensive mdp agent %d: %.4f' % (self.index, time.time() - start))
     return action
 
-class DefensiveReflexAgent(ReflexCaptureAgent):
-  """
-  A reflex agent that keeps its side Pacman-free. Again,
-  this is to give you an idea of what a defensive agent
-  could be like.  It is not the best or only way to make
-  such an agent.
-  """
-
-  def registerInitialState(self, gameState):
-    self.start = gameState.getAgentPosition(self.index)
-    self.entrances = findEntrances(gameState.isOnRedTeam(self.index), self.index, gameState)
-    self.middle = findMiddleOfMap(gameState.isOnRedTeam(self.index), self.index, gameState)
-    self.walls = gameState.getWalls().asList()
-    self.entranceToPatrol = self.middle   
-    # self.entranceToPatrol = self.entrances[len(self.entrances)-1]   # Testing
-    self.lastFoodEaten = None
-    self.isScared = False
-    CaptureAgent.registerInitialState(self, gameState)
-
-  # # print("Implement Defensive agent here")
-
-  def chooseAction(self, gameState):
-    """
-    Picks among the actions with the highest Q(s,a).
-    """
-
-    # # print("NEW ACTION ----------")
-
-    start = time.time()
-
-    # # print("LAst eaten food: ", self.lastFoodEaten)
-
-    action = None
-
-    currentPosition = gameState.getAgentPosition(self.index)
-    currentAgentState = gameState.getAgentState(self.index)
-
-    # update last food eaten
-    if self.getPreviousObservation():
-      # # print("Check food here")
-      eatenFoods = checkEatenFoods(self.red, self.getPreviousObservation(), gameState)
-      closestFood = None
-      
-      # Decide which food to go for when a food is eated on our side.
-      # We don't do this action straight away, as it is important we update the last food eaten
-      # BEFORE we a star to any invaders. And then, if there are no invaders, THEN we A* to food.
-      if len(eatenFoods) == 2:
-        distanceToFirstFood = util.manhattanDistance(currentPosition, eatenFoods[0])
-        distanceToSecondFood = util.manhattanDistance(currentPosition, eatenFoods[1])
-        if distanceToFirstFood < distanceToSecondFood:
-          closestFood = eatenFoods[0]
-        else:
-          closestFood = eatenFoods[1]
-      elif len(eatenFoods) == 1:
-        closestFood = eatenFoods[0]
-
-      if closestFood != None:
-        # # print("Setting last eaten food")
-        self.lastFoodEaten = closestFood
-        # self.foodEaten = True
-        # # print("DOING FOOD ASTAR")
-
-    # If somehow you become pacman, go back to the entrance
-    if currentAgentState.isPacman:
-      action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
-      return action
-
-    if currentAgentState.scaredTimer > 0:
-      # actions = gameState.getLegalActions(self.index)
-      # # print(actions)
-      # # return "Stop"
-      # # print("Agent is scared")
-      self.isScared = True
-    else:
-      self.isScared = False
-
-    # # print("SEEN INVADERS")
-    # Find all seen invaders
-    seenInvaders = []
-    for enemy in self.getOpponents(gameState):
-      invader = gameState.getAgentState(enemy)
-      if invader.isPacman and invader.getPosition() != None:
-        seenInvaders.append(invader)
-
-    # If the defensive agent knows where the enemies are
-    if len(seenInvaders) > 0:
-      closestInvader = None
-      closestDistanceToInvader = sys.maxsize
-      for invader in seenInvaders:
-        distance = util.manhattanDistance(currentPosition, invader.getPosition())
-        if distance < closestDistanceToInvader:
-          closestInvader = invader
-          closestDistanceToInvader = distance
-      
-      # # print("ASTAR to invader:")
-      # # print(closestInvader.getPosition())
-      action = aStarSearchToLocation(gameState, self.index, closestInvader.getPosition(), self.isScared)
-      # # print(action)
-
-      # In the case that we eat an invader, set the last food eaten to none so the agent can go back to patrolling.
-      successor = gameState.generateSuccessor(self.index, action)
-      if successor.getAgentPosition(self.index) == closestInvader.getPosition():
-        self.lastFoodEaten = None
-      return action
-
-    # If the defensive agent doesn't know where the enemies are, then wait them at one of the entrances 
-    # until they get close to 5 manhattan distances 
-    if self.isScared:
-      action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
-      if action == 'Stop':
-        # self.entranceToPatrol = random.choice(self.entrances)
-        self.entranceToPatrol = (self.entrances[math.floor(len(self.entrances)/2)])
-
-      # print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
-      # # print(action)
-      return action
-
-    # Ensuring that the ghost checks the last food eaten still.
-    if self.lastFoodEaten != None:
-      
-      action = aStarSearchToLocation(gameState, self.index, self.lastFoodEaten)
-      if currentPosition == self.lastFoodEaten:
-        self.lastFoodEaten = None
-        # instantly go to patrol - DONT STOP
-        action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
-        # print("Moving back to patrol")
-      # # print(action)
-      return action
-
-    # # print("A STAR TO ENTRANCE")
-    # agent = gameState.getAgentState(agentIndex)
-    # agent.isPacman
-    action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
-    if action == 'Stop':
-      # self.entranceToPatrol = random.choice(self.entrances)
-      self.entranceToPatrol = getNextEntranceToPatrol(self.entrances, self.entranceToPatrol)
-      # print(self.entranceToPatrol)
-      # Do another a star so it doesn't stop. Takes more calculation time though.
-      action = aStarSearchToLocation(gameState, self.index, self.entranceToPatrol)
-      # self.entranceToPatrol = (self.entrances[len(self.entrances) - 1])
-
-    # print ('eval time for agent %d: %.4f' % (self.index, time.time() - start))
-    # # print(action)
-    return action
-
 # Method to aStar to any location on the map given the game state, and the agent index.
 # Takes in facts such as if the agent is scared, and also if it is an offensive agent.
-def aStarSearchToLocation(gameState, agentIndex, location, isScared=False, isOffensive=False):
+def aStarSearchToLocation(gameState, agentIndex, location, isScared=False, isOffensive=False, blocking=False):
   """Search the node that has the lowest combined cost and heuristic first."""
   "*** YOUR CODE HERE ***"
 
@@ -632,11 +506,21 @@ def aStarSearchToLocation(gameState, agentIndex, location, isScared=False, isOff
 
       # Separate goal for if the agent is scared, and if it is not scared.
       if not isScared:
-        if currentStatePosition == location:
+        if not blocking:
+          if currentStatePosition == location:
 
-            if len(currentStatePath) == 0: # Return STOP if the location has been reached and there is no more path.
-              return "Stop"
-            return currentStatePath[0] # Return the first action on the path  
+              if len(currentStatePath) == 0: # Return STOP if the location has been reached and there is no more path.
+                return "Stop"
+              return currentStatePath[0] # Return the first action on the path  
+        else:
+          if currentStatePosition[1] == location[1]:
+            teamIsRed = gameState.isOnRedTeam(agentIndex)
+
+            if (teamIsRed and currentStatePosition[0] >= location[0]) or (not teamIsRed and currentStatePosition[0] <= location[0]):
+
+              if len(currentStatePath) == 0: # Return STOP if the location has been reached and there is no more path.
+                return "Stop"
+              return currentStatePath[0] # Return the first action on the path 
       else:
         if 2 <= util.manhattanDistance(currentStatePosition, location) <= 3:
 
@@ -767,14 +651,14 @@ def findOffensiveEntrances(teamIsRed, gameState, entrances):
 
   return offensiveEntrances
 
-# Get the offensive entrances of this specific agent
-def getOwnOffensiveEntrances(offensiveEntrances, teamIndex):
-  topOffensiveEntrances = offensiveEntrances[:len(offensiveEntrances)//2]
-  bottomOffensiveEntrances = offensiveEntrances[len(offensiveEntrances)//2:]
+# Get the entrances of this specific agent
+def getOwnEntrances(entrances, teamIndex):
+  topEntrances = entrances[:len(entrances)//2]
+  bottomEntrances = entrances[len(entrances)//2:]
 
   if teamIndex == 0:
-    return topOffensiveEntrances
-  return bottomOffensiveEntrances
+    return topEntrances
+  return bottomEntrances
 
 # Find the middle of the map by finding all entrances and getting the middle entrance.
 # WARNING: This may mess up in cases where an entrance is unreachable
@@ -898,7 +782,7 @@ def generateSuccessor(gameState, action, currentDirection):
 # MDP function to calculate the reward.
 def calculateMDPReward(state, foodDict, capsuleDict, entrancesDict, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState, previousDirection,
 currentDirection, totalFeatureCalculatingTime, ghostPositions, wallsDict, teammatePosition, numWallsDict,
-ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDict):
+ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDict, currentScore, agentScaredTimer):
   reward = 0
 
   # foodAndCapsuleTime = time.time()
@@ -923,8 +807,7 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
   if state in capsuleDict:
     # Very good to get capsule if being chased
     if beingChased or teammateBeingChased:
-      reward += foodReward * totalFoodCount * 2
-      reward += foodReward * totalFoodCount * 2
+      reward += foodReward * totalFoodCount * 6
     # reward += foodReward / 2
 
   # Try to split up teammates
@@ -945,8 +828,12 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     # reward +=len(foodDict) * totalFoodCount/10
     
     # # If you've eaten a quarter of the food, going back to entrance is even better
-    if offensiveFoodEaten >= totalFoodCount/4 and beingChased:
+    # if offensiveFoodEaten >= totalFoodCount/4 and beingChased:
+    if offensiveFoodEaten >= totalFoodCount/4:
       reward += foodReward * totalFoodCount * 2
+
+    if currentScore + offensiveFoodEaten > 0 and agentScaredTimer <= 10:
+      reward += foodReward * totalFoodCount * 4
 
     # If there is only 2 food left, go back as soon as possible.
     if len(foodDict) <= 2:
@@ -957,9 +844,12 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
     # If the ghost is being chased, give a lot of reward for returning home to store the food.
 
 
+    # if state in entrancesDict:
     if state in entrancesDict and offensiveFoodEaten > 0:
       # reward += 10*offensiveFoodEaten
-      reward += foodReward * 2
+      # reward += foodReward * 2
+      reward += foodReward * totalFoodCount * 2
+      # reward += foodReward * totalFoodCount * 6
 
     # To save time, calculating reward of ghost distance reward dict in SEPARATE function called
     # ghostDistancesRewardDict and simple grabbing the reward to subtract from this state.
@@ -976,7 +866,8 @@ ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDi
 # Method to perform the value iteration. Returns an action.
 def performValueIteration(offensivePositions, legalOffensiveActions, discountFactor,
 currentPosition, foodDict, capsuleDict, entrancesDict, storeFood, beingChased, ghostAgents, offensiveFoodEaten, gameState, currentDirection,
-ghostPositions, wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDict):
+ghostPositions, wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDict, totalFoodCount, teammateBeingChased,
+closeToGhostFoodDict, currentScore, agentScaredTimer):
 
   # Check how long it takes to perform value iteration
   start = time.time()
@@ -1018,7 +909,8 @@ ghostPositions, wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDi
         # startCalculatingReward = time.time()
         QDict[action] = calculateMDPReward(state, foodDict, capsuleDict, entrancesDict, storeFood, beingChased,
         ghostAgents, offensiveFoodEaten, gameState, currentDirection, childState[1], totalFeatureCalculatingTime, ghostPositions,
-        wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDict, totalFoodCount, teammateBeingChased, closeToGhostFoodDict) + discountFactor * previousPolicies[childState[0]][Q_VALUE_INDEX]
+        wallsDict, teammatePosition, numWallsDict, ghostDistanceRewardDict, totalFoodCount, teammateBeingChased,
+        closeToGhostFoodDict, currentScore, agentScaredTimer) + discountFactor * previousPolicies[childState[0]][Q_VALUE_INDEX]
         # totalRewardTime += (time.time() - startCalculatingReward)
         # print("action set:", QDict[action])
 
@@ -1097,11 +989,15 @@ def makeNumWallsDict(offensiveStates, wallsDict):
 
 
 # This method returns the index of the agent in their team
-def getTeamIndex(team, index):
-  # Agent names are 1 - 4 whereas indexes are 0 - 3, so we add 1
-  index += 1
+def getTeamIndex(teamIsRed, team, index):
+  # add 1 if red team
+  if teamIsRed:
+    index += 1
   # print("agent index:", index)
   # print("team: ", team)
+  # print("Team:", team)
+  # print(team[0])
+  # print(index)
   if team[0] == index:
     # print("Returning 0")
     return 0
@@ -1184,5 +1080,3 @@ def findCloseFoodsToGhost(ghostPositions, foodDict, distanceRange):
           closeToGhostFoodDict[position] = True
 
   return closeToGhostFoodDict
-
-
