@@ -206,7 +206,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.totalFoodCount = len(self.getFood(gameState).asList())
     self.lastFoodEaten = None
     # print(len(self.getFood(gameState).asList()))
-    print("double offensive and defensive mdp agent V3 - make capsules worth more and only check score > 0 instead of 2")
+    print("double offensive and defensive mdp agent V3.2 - remove prints and increase num iterations to 150")
     # print(self.numWallsDict)
     # print("Team index:", self.teamIndex)
     # print("agent index:", self.index)
@@ -1022,7 +1022,7 @@ closeToGhostFoodDict, currentScore, agentScaredTimer):
   ACTION_INDEX = 0
   Q_VALUE_INDEX = 1
 
-  numIterations = 120
+  numIterations = 150
 
   # print("offensive positions length:", len(offensivePositions))
   # print("actions length:", len(offensivePositions))
