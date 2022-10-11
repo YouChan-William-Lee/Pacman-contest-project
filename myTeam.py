@@ -205,7 +205,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     self.numWallsDict = makeNumWallsDict(self.offensivePositions, self.wallsDict)
     self.totalFoodCount = len(self.getFood(gameState).asList())
     self.lastFoodEaten = None
-    print(len(self.getFood(gameState).asList()))
+    # print(len(self.getFood(gameState).asList()))
     print("double offensive and defensive mdp agent V3 - make capsules worth more and only check score > 0 instead of 2")
     # print(self.numWallsDict)
     # print("Team index:", self.teamIndex)
@@ -1067,7 +1067,7 @@ closeToGhostFoodDict, currentScore, agentScaredTimer):
   # print('Number of ghost: ', str(len(ghostAgents))) 
 
   # Print how long it takes to perform value iteration
-  print('Value Iteration time for phantomtroupe offensive mpd agent: ', str(time.time() - start))
+  # print('Value Iteration time for phantomtroupe offensive mpd agent: ', str(time.time() - start))
 
   # print('Total time to calculate rewards: ', totalRewardTime)
   # print('Total time to calculate ghosts reward: ', totalFeatureCalculatingTime[0])
